@@ -1,0 +1,72 @@
+package com.codenamezeroseven.gitpulse
+
+import android.os.Bundle
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.WindowCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.fragment.app.Fragment
+import com.codenamezeroseven.gitpulse.databinding.ActivityMainBinding
+import com.codenamezeroseven.gitpulse.ui.ActivityFragment
+import com.codenamezeroseven.gitpulse.ui.DashboardFragment
+import com.codenamezeroseven.gitpulse.ui.GoalsFragment
+import com.codenamezeroseven.gitpulse.ui.ProfileFragment
+import com.codenamezeroseven.gitpulse.ui.ReposFragment
+
+
+class MainActivity : AppCompatActivity() {
+
+    private lateinit var binding: ActivityMainBinding
+    private val dashboard = DashboardFragment()
+    private val activityFrag = ActivityFragment()
+    private val repos = ReposFragment()
+    private val goals = GoalsFragment()
+    private val profile = ProfileFragment()
+    private var current: Fragment = dashboard
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        Prefs.init(applicationContext)
+        if (Prefs.theme == "black") {
+            theme.applyStyle(R.style.ThemeOverlay_GitPulse_PitchBlack, true)
+        }
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(0, bars.top, 0, bars.bottom)
+            insets
+        }
+
+        supportFragmentManager.beginTransaction()
+            .add(R.id.container, profile).hide(profile)
+            .add(R.id.container, goals).hide(goals)
+            .add(R.id.container, repos).hide(repos)
+            .add(R.id.container, activityFrag).hide(activityFrag)
+            .add(R.id.container, dashboard)
+            .commit()
+
+        binding.bottomNav.setOnItemSelectedListener { item ->
+            val f = when (item.itemId) {
+                R.id.nav_dashboard -> dashboard
+                R.id.nav_activity -> activityFrag
+                R.id.nav_repos -> repos
+                R.id.nav_goals -> goals
+                else -> profile
+            }
+            if (f !== current) {
+                supportFragmentManager.beginTransaction().hide(current).show(f).commit()
+                current = f
+            }
+            true
+        }
+
+        if (Prefs.token.isBlank()) binding.bottomNav.selectedItemId = R.id.nav_profile
+    }
+
+    fun openProfile() {
+        binding.bottomNav.selectedItemId = R.id.nav_profile
+    }
+}
