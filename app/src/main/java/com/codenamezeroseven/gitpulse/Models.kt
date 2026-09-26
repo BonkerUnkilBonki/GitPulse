@@ -1,8 +1,13 @@
 package com.codenamezeroseven.gitpulse
 
+import kotlinx.parcelize.Parcelize
 import org.json.JSONObject
 import java.time.LocalDate
 
+@Parcelize
+data class CommitInfo(val sha: String, val message: String) : android.os.Parcelable
+
+@Parcelize
 data class User(
     val login: String,
     val name: String?,
@@ -14,7 +19,7 @@ data class User(
     val location: String?,
     val blog: String?,
     val htmlUrl: String
-) {
+) : android.os.Parcelable {
     companion object {
         fun fromJson(o: JSONObject): User = User(
             login = o.optString("login"),
@@ -31,16 +36,20 @@ data class User(
     }
 }
 
+@Parcelize
 data class Repo(
     val name: String,
     val fullName: String,
     val description: String?,
     val language: String?,
     val stars: Int,
-    val pushedAt: LocalDate?,
+    val pushedAtEpochDay: Long,
     val url: String,
     val isFork: Boolean
-) {
+) : android.os.Parcelable {
+    val pushedAt: LocalDate?
+        get() = if (pushedAtEpochDay == -1L) null else LocalDate.ofEpochDay(pushedAtEpochDay)
+
     companion object {
         fun fromJson(o: JSONObject): Repo = Repo(
             name = o.optString("name"),
@@ -48,10 +57,10 @@ data class Repo(
             description = if (o.isNull("description")) null else o.optString("description"),
             language = if (o.isNull("language")) null else o.optString("language"),
             stars = o.optInt("stargazers_count"),
-            pushedAt = run {
+            pushedAtEpochDay = run {
                 val s = o.optString("pushed_at")
-                if (s.isNullOrBlank()) null
-                else runCatching { LocalDate.parse(s.take(10)) }.getOrNull()
+                if (s.isNullOrBlank()) -1L
+                else runCatching { LocalDate.parse(s.take(10)).toEpochDay() }.getOrDefault(-1L)
             },
             url = o.optString("html_url"),
             isFork = o.optBoolean("fork")
@@ -59,45 +68,95 @@ data class Repo(
     }
 }
 
+@Parcelize
 data class GhEvent(
     val type: String,
     val repoName: String,
-    val createdAt: LocalDate,
+    val createdAtEpochDay: Long,
     val detail: String,
-    val commits: Int
-) {
+    val commits: Int,
+    val commitList: List<CommitInfo> = emptyList(),
+    val title: String? = null,
+    val action: String? = null,
+    val ref: String? = null,
+    val tag: String? = null
+) : android.os.Parcelable {
+    val createdAt: LocalDate
+        get() = LocalDate.ofEpochDay(createdAtEpochDay)
+
     companion object {
         fun fromJson(o: JSONObject): GhEvent {
             val type = o.optString("type")
             val repo = o.optJSONObject("repo")?.optString("name") ?: ""
             val date = runCatching {
                 LocalDate.parse(o.optString("created_at").take(10))
-            }.getOrDefault(LocalDate.now())
+            }.getOrDefault(LocalDate.now()).toEpochDay()
             val payload = o.optJSONObject("payload") ?: JSONObject()
+
             var commits = 0
+            var commitList: List<CommitInfo> = emptyList()
+            var title: String? = null
+            var action: String? = null
+            var ref: String? = null
+            var tag: String? = null
+
             val detail = when (type) {
                 "PushEvent" -> {
-                    commits = payload.optJSONArray("commits")?.length() ?: payload.optInt("size", 0)
+                    commitList = payload.optJSONArray("commits")?.let { arr ->
+                        (0 until arr.length()).mapNotNull { i ->
+                            val c = arr.optJSONObject(i) ?: return@mapNotNull null
+                            CommitInfo(c.optString("sha"), c.optString("message"))
+                        }
+                    } ?: emptyList()
+                    commits = if (commitList.isNotEmpty()) commitList.size else payload.optInt("size", 0)
                     "Pushed $commits commit" + if (commits == 1) "" else "s"
                 }
-                "PullRequestEvent" -> "Pull request " + payload.optString("action")
-                "PullRequestReviewEvent" -> "Reviewed a pull request"
-                "PullRequestReviewCommentEvent" -> "Commented on a review"
-                "IssuesEvent" -> "Issue " + payload.optString("action")
-                "IssueCommentEvent" -> "Commented on an issue"
-                "CreateEvent" -> ("Created " + payload.optString("ref_type") + " " +
-                        payload.optString("ref")).trim()
-                "DeleteEvent" -> ("Deleted " + payload.optString("ref_type") + " " +
-                        payload.optString("ref")).trim()
+                "PullRequestEvent" -> {
+                    action = payload.optString("action")
+                    title = payload.optJSONObject("pull_request")?.optString("title")
+                    "Pull request " + action
+                }
+                "PullRequestReviewEvent" -> {
+                    title = payload.optJSONObject("pull_request")?.optString("title")
+                    "Reviewed a pull request"
+                }
+                "PullRequestReviewCommentEvent" -> {
+                    title = payload.optJSONObject("pull_request")?.optString("title")
+                    "Commented on a review"
+                }
+                "IssuesEvent" -> {
+                    action = payload.optString("action")
+                    title = payload.optJSONObject("issue")?.optString("title")
+                    "Issue " + action
+                }
+                "IssueCommentEvent" -> {
+                    title = payload.optJSONObject("issue")?.optString("title")
+                    "Commented on an issue"
+                }
+                "CreateEvent" -> {
+                    val rt = payload.optString("ref_type")
+                    ref = payload.optString("ref")
+                    "Created $rt" + (if (!ref.isNullOrBlank()) " $ref" else "")
+                }
+                "DeleteEvent" -> {
+                    val rt = payload.optString("ref_type")
+                    ref = payload.optString("ref")
+                    "Deleted $rt" + (if (!ref.isNullOrBlank()) " $ref" else "")
+                }
                 "WatchEvent" -> "Starred repository"
                 "ForkEvent" -> "Forked repository"
-                "ReleaseEvent" -> "Published a release"
+                "ReleaseEvent" -> {
+                    val rel = payload.optJSONObject("release")
+                    tag = rel?.optString("tag_name")
+                    title = rel?.optString("name")
+                    "Published a release"
+                }
                 "PublicEvent" -> "Made repository public"
                 "MemberEvent" -> "Collaborator added"
                 "GollumEvent" -> "Updated the wiki"
                 else -> type.removeSuffix("Event")
             }
-            return GhEvent(type, repo, date, detail, commits)
+            return GhEvent(type, repo, date, detail, commits, commitList, title, action, ref, tag)
         }
     }
 }

@@ -1,9 +1,8 @@
 package com.codenamezeroseven.gitpulse.ui
 
-import android.content.Intent
-import android.net.Uri
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
 import com.codenamezeroseven.gitpulse.Repo
 import com.codenamezeroseven.gitpulse.TimeAgo
@@ -35,9 +34,9 @@ class RepoAdapter : RecyclerView.Adapter<RepoAdapter.VH>() {
         b.language.text = r.language ?: "Mixed"
         b.stars.text = if (r.stars > 0) "\u2605 ${r.stars}" else ""
         b.pushed.text = r.pushedAt?.let { "Pushed " + TimeAgo.since(it) } ?: ""
-        b.root.setOnClickListener {
-            runCatching {
-                b.root.context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(r.url)))
+        b.root.setOnClickListener { view ->
+            (view.context as? AppCompatActivity)?.let { act ->
+                RepoDetailSheet.show(act.supportFragmentManager, r)
             }
         }
     }

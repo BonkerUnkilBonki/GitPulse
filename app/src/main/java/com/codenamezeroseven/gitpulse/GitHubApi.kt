@@ -2,10 +2,13 @@ package com.codenamezeroseven.gitpulse
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
+import java.time.LocalDate
 import java.util.concurrent.TimeUnit
 
 object GitHubApi {
@@ -78,4 +81,43 @@ object GitHubApi {
             client.newCall(req).execute().use { r -> if (r.isSuccessful) r.body?.bytes() else null }
         }.getOrNull()
     }
+
+    /**
+     * Fetches the real contribution calendar (same data as the GitHub profile
+     * graph, private contributions included when the token allows) covering
+     * roughly the last 12 months. Returns (day -> count) plus the total.
+     */
+    suspend fun fetchContributionCalendar(token: String, login: String): Pair<Map<LocalDate, Int>, Int> =
+        withContext(Dispatchers.IO) {
+            val query = """query { user(login: \"$login\") { contributionsCollection { contributionCalendar { totalContributions weeks { contributionDays { date contributionCount } } } } } }"""
+            val payload = JSONObject().put("query", query).toString()
+            val req = Request.Builder()
+                .url("https://api.github.com/graphql")
+                .header("Authorization", "Bearer $token")
+                .post(payload.toRequestBody("application/json".toMediaType()))
+                .build()
+            client.newCall(req).execute().use { resp ->
+                val text = resp.body?.string() ?: ""
+                if (!resp.isSuccessful) throw ApiException("GraphQL error ${resp.code}")
+                val root = JSONObject(text)
+                if (root.has("errors")) {
+                    throw ApiException("GraphQL: " + root.optJSONArray("errors")?.optJSONObject(0)?.optString("message").orEmpty())
+                }
+                val calendar = root.getJSONObject("data").getJSONObject("user")
+                    .getJSONObject("contributionsCollection").getJSONObject("contributionCalendar")
+                val total = calendar.optInt("totalContributions", -1)
+                val weeks = calendar.getJSONArray("weeks")
+                val map = mutableMapOf<LocalDate, Int>()
+                for (w in 0 until weeks.length()) {
+                    val days = weeks.getJSONObject(w).getJSONArray("contributionDays")
+                    for (d in 0 until days.length()) {
+                        val day = days.getJSONObject(d)
+                        val date = runCatching { LocalDate.parse(day.optString("date")) }.getOrNull() ?: continue
+                        val count = day.optInt("contributionCount", 0)
+                        if (count > 0) map[date] = count
+                    }
+                }
+                map to total
+            }
+        }
 }

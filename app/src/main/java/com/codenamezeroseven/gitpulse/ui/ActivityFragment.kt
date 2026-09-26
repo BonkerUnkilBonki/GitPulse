@@ -31,7 +31,15 @@ class ActivityFragment : Fragment() {
         b.recycler.layoutManager = LinearLayoutManager(requireContext())
         b.recycler.adapter = adapter
         b.swipe.setOnRefreshListener { load(true) }
+        b.swipe.setOnChildScrollUpCallback { _, _ -> b.recycler.canScrollVertically(-1) }
         b.connectBtn.setOnClickListener { (activity as? MainActivity)?.openProfile() }
+
+        b.chipAll.setOnCheckedChangeListener { _, checked -> if (checked) render() }
+        b.chipFCommits.setOnCheckedChangeListener { _, checked -> if (checked) render() }
+        b.chipFPrs.setOnCheckedChangeListener { _, checked -> if (checked) render() }
+        b.chipFIssues.setOnCheckedChangeListener { _, checked -> if (checked) render() }
+        b.chipFStars.setOnCheckedChangeListener { _, checked -> if (checked) render() }
+
         if (Prefs.token.isBlank()) showDisconnected() else load(false)
     }
 
@@ -41,14 +49,20 @@ class ActivityFragment : Fragment() {
     }
 
     override fun onHiddenChanged(hidden: Boolean) {
-        if (!hidden && _b != null && Prefs.token.isNotBlank() && b.disconnected.visibility == View.VISIBLE) {
-            load(false)
+        if (!hidden && _b != null) {
+            if (Prefs.token.isBlank()) {
+                showDisconnected()
+            } else if (GitHubData.user != null) {
+                render()
+            } else {
+                load(false)
+            }
         }
     }
 
     private fun showDisconnected() {
         b.swipe.isRefreshing = false
-        b.recycler.visibility = View.GONE
+        b.content.visibility = View.GONE
         b.disconnected.visibility = View.VISIBLE
     }
 
@@ -58,7 +72,7 @@ class ActivityFragment : Fragment() {
             return
         }
         b.disconnected.visibility = View.GONE
-        b.recycler.visibility = View.VISIBLE
+        b.content.visibility = View.VISIBLE
         b.swipe.isRefreshing = GitHubData.user == null
         viewLifecycleOwner.lifecycleScope.launch {
             val result = runCatching { GitHubData.refresh(force) }
@@ -73,7 +87,25 @@ class ActivityFragment : Fragment() {
 
     private fun render() {
         val events = GitHubData.events
-        adapter.submit(events.take(200))
-        b.empty.visibility = if (events.isEmpty()) View.VISIBLE else View.GONE
+
+        val commits = events.asSequence().filter { it.type == "PushEvent" }.sumOf { it.commits }
+        val prs = events.count { it.type.startsWith("PullRequest") }
+        val issues = events.count { it.type == "IssuesEvent" || it.type == "IssueCommentEvent" }
+        val stars = events.count { it.type == "WatchEvent" }
+        b.statCommits.text = commits.toString()
+        b.statPrs.text = prs.toString()
+        b.statIssues.text = issues.toString()
+        b.statStars.text = stars.toString()
+
+        val filtered = when {
+            b.chipFCommits.isChecked -> events.filter { it.type == "PushEvent" }
+            b.chipFPrs.isChecked -> events.filter { it.type.startsWith("PullRequest") }
+            b.chipFIssues.isChecked ->
+                events.filter { it.type == "IssuesEvent" || it.type == "IssueCommentEvent" || it.type.startsWith("PullRequest") }
+            b.chipFStars.isChecked -> events.filter { it.type == "WatchEvent" || it.type == "ForkEvent" }
+            else -> events
+        }
+        adapter.submit(filtered.take(300))
+        b.empty.visibility = if (filtered.isEmpty()) View.VISIBLE else View.GONE
     }
 }

@@ -30,6 +30,9 @@ class DashboardFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         b.swipe.setOnRefreshListener { load(true) }
+        // Only allow pull-to-refresh when the scrollable content is actually at
+        // the top; otherwise the swipe steals scroll-up gestures.
+        b.swipe.setOnChildScrollUpCallback { _, _ -> b.content.canScrollVertically(-1) }
         b.connectBtn.setOnClickListener { (activity as? MainActivity)?.openProfile() }
         if (Prefs.token.isBlank()) showDisconnected() else load(false)
     }
@@ -40,13 +43,20 @@ class DashboardFragment : Fragment() {
     }
 
     override fun onHiddenChanged(hidden: Boolean) {
-        if (!hidden && _b != null && Prefs.token.isNotBlank() && b.content.visibility == View.GONE) {
-            load(false)
+        if (!hidden && _b != null) {
+            if (Prefs.token.isBlank()) {
+                showDisconnected()
+            } else if (GitHubData.user != null) {
+                render()
+            } else {
+                load(false)
+            }
         }
     }
 
     private fun showDisconnected() {
         b.swipe.isRefreshing = false
+        b.swipe.isEnabled = false
         b.content.visibility = View.GONE
         b.disconnected.visibility = View.VISIBLE
     }
@@ -56,6 +66,7 @@ class DashboardFragment : Fragment() {
             showDisconnected()
             return
         }
+        b.swipe.isEnabled = true
         b.disconnected.visibility = View.GONE
         b.content.visibility = View.VISIBLE
         b.swipe.isRefreshing = GitHubData.user == null
@@ -95,7 +106,8 @@ class DashboardFragment : Fragment() {
         b.heatmap.setData(daily, weeks = 26)
 
         b.totalCommitsValue.text = if (d.totalCommits >= 0) d.totalCommits.toString() else "…"
-        b.activeDaysValue.text = StatsEngine.activeDays(daily).toString()
+        val cutoff = LocalDate.now().minusDays(89)
+        b.activeDaysValue.text = daily.count { it.value > 0 && !it.key.isBefore(cutoff) }.toString()
         b.bestStreakValue.text = StatsEngine.bestStreak(daily).toString()
     }
 

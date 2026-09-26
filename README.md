@@ -8,8 +8,15 @@ heatmap, recent activity, repositories and goal tracking.
 - **Dashboard** — today's commits vs goal (animated progress ring), streak chip,
   repos / stars / followers / PRs stat cards, 7-day bar chart with goal line,
   26-week contribution heatmap (tap any day for details), records.
-- **Activity** — your last ~90 days of GitHub events (pushes, PRs, issues, stars,
-  forks, releases). Tap an event to open the repo on GitHub.
+- **Activity** — your last ~90 days of GitHub events with a 90-day summary card
+  (commits, PRs, issues, stars given) and filter chips (All / Commits / PRs /
+  Issues / Stars). Each event shows a commit message or PR/issue title preview.
+  Tap an event to open an in-app detail sheet with the full commit list
+  (SHA + message), PR/issue titles, actions, tags and references — plus an
+  optional "Open on GitHub" button.
+- **Repo details** — tapping a repository in the Repos tab opens an in-app
+  detail sheet (description, language, stars, last push, fork status) instead
+  of leaving the app.
 - **Repos** — your repositories with language color dots, star counts and
   last-pushed time. Filter forks, sort by recent / stars / name.
 - **Goals** — set a daily and weekly commit goal with steppers, weekly progress
@@ -27,8 +34,10 @@ heatmap, recent activity, repositories and goal tracking.
 The token is stored only on your device and is sent only to api.github.com.
 
 ## Notes
-- Daily-commit data comes from the GitHub Events API (up to 300 events /
-  ~90 days) plus Search API for all-time totals. Streaks are computed from that.
+- Daily commit counts come from the GitHub GraphQL contribution calendar —
+  the same data as your profile graph, including private contributions when
+  the token allows — with an Events-API fallback (~90 days, public only).
+  Streaks and the heatmap are computed from that calendar.
 - Material You dynamic color is used on Android 12+; a custom teal M3 palette
   is the fallback on older versions. Dark mode is fully supported.
 - **Theme options** — System / Light / Dark / Pitch black (true-black AMOLED mode)

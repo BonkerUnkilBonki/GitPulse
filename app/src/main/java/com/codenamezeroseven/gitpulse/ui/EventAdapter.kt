@@ -1,11 +1,10 @@
 package com.codenamezeroseven.gitpulse.ui
 
-import android.content.Intent
 import android.content.res.ColorStateList
-import android.graphics.Color
-import android.net.Uri
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
+import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
 import com.codenamezeroseven.gitpulse.GhEvent
 import com.codenamezeroseven.gitpulse.R
@@ -13,6 +12,45 @@ import com.codenamezeroseven.gitpulse.TimeAgo
 import com.codenamezeroseven.gitpulse.databinding.ItemEventBinding
 import com.google.android.material.R as MaterialR
 import com.google.android.material.color.MaterialColors
+
+object EventVisual {
+    data class Style(val icon: Int, val bgAttr: Int, val fgAttr: Int)
+
+    fun of(type: String): Style = when {
+        type == "PushEvent" -> Style(
+            R.drawable.ic_ev_push,
+            MaterialR.attr.colorPrimaryContainer, MaterialR.attr.colorOnPrimaryContainer
+        )
+        type.startsWith("PullRequest") -> Style(
+            R.drawable.ic_ev_pr,
+            MaterialR.attr.colorSecondaryContainer, MaterialR.attr.colorOnSecondaryContainer
+        )
+        type == "IssuesEvent" || type == "IssueCommentEvent" -> Style(
+            R.drawable.ic_ev_issue,
+            MaterialR.attr.colorTertiaryContainer, MaterialR.attr.colorOnTertiaryContainer
+        )
+        type == "WatchEvent" -> Style(
+            R.drawable.ic_ev_star,
+            MaterialR.attr.colorErrorContainer, MaterialR.attr.colorOnErrorContainer
+        )
+        type == "ForkEvent" -> Style(
+            R.drawable.ic_ev_fork,
+            MaterialR.attr.colorSecondaryContainer, MaterialR.attr.colorOnSecondaryContainer
+        )
+        type == "CreateEvent" || type == "DeleteEvent" -> Style(
+            R.drawable.ic_ev_create,
+            MaterialR.attr.colorPrimaryContainer, MaterialR.attr.colorOnPrimaryContainer
+        )
+        type == "ReleaseEvent" -> Style(
+            R.drawable.ic_ev_release,
+            MaterialR.attr.colorTertiaryContainer, MaterialR.attr.colorOnTertiaryContainer
+        )
+        else -> Style(
+            R.drawable.ic_ev_push,
+            MaterialR.attr.colorSurfaceVariant, MaterialR.attr.colorOnSurfaceVariant
+        )
+    }
+}
 
 class EventAdapter : RecyclerView.Adapter<EventAdapter.VH>() {
 
@@ -34,52 +72,36 @@ class EventAdapter : RecyclerView.Adapter<EventAdapter.VH>() {
     override fun onBindViewHolder(holder: VH, position: Int) {
         val e = items[position]
         val ctx = holder.binding.root.context
-        val (icon, bgAttr, fgAttr) = when {
-            e.type == "PushEvent" -> Triple(
-                R.drawable.ic_ev_push,
-                MaterialR.attr.colorPrimaryContainer, MaterialR.attr.colorOnPrimaryContainer
-            )
-            e.type.startsWith("PullRequest") -> Triple(
-                R.drawable.ic_ev_pr,
-                MaterialR.attr.colorSecondaryContainer, MaterialR.attr.colorOnSecondaryContainer
-            )
-            e.type == "IssuesEvent" || e.type == "IssueCommentEvent" -> Triple(
-                R.drawable.ic_ev_issue,
-                MaterialR.attr.colorTertiaryContainer, MaterialR.attr.colorOnTertiaryContainer
-            )
-            e.type == "WatchEvent" -> Triple(
-                R.drawable.ic_ev_star,
-                MaterialR.attr.colorErrorContainer, MaterialR.attr.colorOnErrorContainer
-            )
-            e.type == "ForkEvent" -> Triple(
-                R.drawable.ic_ev_fork,
-                MaterialR.attr.colorSecondaryContainer, MaterialR.attr.colorOnSecondaryContainer
-            )
-            e.type == "CreateEvent" || e.type == "DeleteEvent" -> Triple(
-                R.drawable.ic_ev_create,
-                MaterialR.attr.colorPrimaryContainer, MaterialR.attr.colorOnPrimaryContainer
-            )
-            e.type == "ReleaseEvent" -> Triple(
-                R.drawable.ic_ev_release,
-                MaterialR.attr.colorTertiaryContainer, MaterialR.attr.colorOnTertiaryContainer
-            )
-            else -> Triple(
-                R.drawable.ic_ev_push,
-                MaterialR.attr.colorSurfaceVariant, MaterialR.attr.colorOnSurfaceVariant
-            )
-        }
-        val bg = MaterialColors.getColor(ctx, bgAttr, "bg")
-        val fg = MaterialColors.getColor(ctx, fgAttr, "fg")
-        holder.binding.icon.setImageResource(icon)
-        holder.binding.icon.setColorFilter(fg)
-        holder.binding.iconBg.backgroundTintList = ColorStateList.valueOf(bg)
+        val style = EventVisual.of(e.type)
+
+        holder.binding.icon.setImageResource(style.icon)
+        holder.binding.icon.setColorFilter(
+            MaterialColors.getColor(ctx, style.fgAttr, "fg")
+        )
+        holder.binding.iconBg.backgroundTintList = ColorStateList.valueOf(
+            MaterialColors.getColor(ctx, style.bgAttr, "bg")
+        )
 
         holder.binding.title.text = e.detail
         holder.binding.repo.text = e.repoName
         holder.binding.time.text = TimeAgo.since(e.createdAt)
-        holder.binding.root.setOnClickListener {
-            runCatching {
-                ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/${e.repoName}")))
+
+        val extra = when {
+            e.type == "PushEvent" && e.commitList.isNotEmpty() ->
+                e.commitList.first().message.lineSequence().firstOrNull()
+            e.title != null -> e.title
+            else -> null
+        }
+        if (extra.isNullOrBlank()) {
+            holder.binding.subdetail.visibility = View.GONE
+        } else {
+            holder.binding.subdetail.visibility = View.VISIBLE
+            holder.binding.subdetail.text = extra
+        }
+
+        holder.binding.root.setOnClickListener { view ->
+            (view.context as? AppCompatActivity)?.let { act ->
+                EventDetailSheet.show(act.supportFragmentManager, e)
             }
         }
     }
@@ -97,5 +119,6 @@ object LangColors {
     )
 
     fun of(lang: String?): Int =
-        runCatching { Color.parseColor(map[lang] ?: "#78909C") }.getOrDefault(Color.GRAY)
+        runCatching { android.graphics.Color.parseColor(map[lang] ?: "#78909C") }
+            .getOrDefault(android.graphics.Color.GRAY)
 }

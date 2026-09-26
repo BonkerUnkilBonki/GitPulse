@@ -28,6 +28,7 @@ class GoalsFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         b.swipe.setOnRefreshListener { load(true) }
+        b.swipe.setOnChildScrollUpCallback { _, _ -> b.content.canScrollVertically(-1) }
         b.connectBtn.setOnClickListener { (activity as? MainActivity)?.openProfile() }
 
         b.dailyMinus.setOnClickListener { Prefs.dailyGoal = Prefs.dailyGoal - 1; render() }
@@ -44,13 +45,20 @@ class GoalsFragment : Fragment() {
     }
 
     override fun onHiddenChanged(hidden: Boolean) {
-        if (!hidden && _b != null && Prefs.token.isNotBlank() && b.content.visibility == View.GONE) {
-            load(false)
+        if (!hidden && _b != null) {
+            if (Prefs.token.isBlank()) {
+                showDisconnected()
+            } else if (GitHubData.user != null) {
+                render()
+            } else {
+                load(false)
+            }
         }
     }
 
     private fun showDisconnected() {
         b.swipe.isRefreshing = false
+        b.swipe.isEnabled = false
         b.content.visibility = View.GONE
         b.disconnected.visibility = View.VISIBLE
     }
@@ -60,6 +68,7 @@ class GoalsFragment : Fragment() {
             showDisconnected()
             return
         }
+        b.swipe.isEnabled = true
         b.disconnected.visibility = View.GONE
         b.content.visibility = View.VISIBLE
         b.swipe.isRefreshing = GitHubData.user == null
@@ -88,7 +97,8 @@ class GoalsFragment : Fragment() {
 
         b.streakValue.text = StatsEngine.streak(daily).toString() + " days"
         b.bestValue.text = StatsEngine.bestStreak(daily).toString() + " days"
-        b.activeValue.text = StatsEngine.activeDays(daily).toString()
+        val cutoff = java.time.LocalDate.now().minusDays(89)
+        b.activeValue.text = daily.count { it.value > 0 && !it.key.isBefore(cutoff) }.toString()
         b.totalValue.text = if (GitHubData.totalCommits >= 0) GitHubData.totalCommits.toString() else "…"
     }
 }

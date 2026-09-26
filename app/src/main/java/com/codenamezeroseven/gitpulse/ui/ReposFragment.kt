@@ -35,6 +35,7 @@ class ReposFragment : Fragment() {
         b.chipSortRecent.setOnCheckedChangeListener { _, _ -> render() }
         b.chipSortStars.setOnCheckedChangeListener { _, _ -> render() }
         b.chipSortName.setOnCheckedChangeListener { _, _ -> render() }
+        b.swipe.setOnChildScrollUpCallback { _, _ -> b.recycler.canScrollVertically(-1) }
         b.connectBtn.setOnClickListener { (activity as? MainActivity)?.openProfile() }
 
         if (Prefs.token.isBlank()) showDisconnected() else load(false)
@@ -46,8 +47,14 @@ class ReposFragment : Fragment() {
     }
 
     override fun onHiddenChanged(hidden: Boolean) {
-        if (!hidden && _b != null && Prefs.token.isNotBlank() && b.disconnected.visibility == View.VISIBLE) {
-            load(false)
+        if (!hidden && _b != null) {
+            if (Prefs.token.isBlank()) {
+                showDisconnected()
+            } else if (GitHubData.user != null) {
+                render()
+            } else {
+                load(false)
+            }
         }
     }
 
