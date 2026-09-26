@@ -88,7 +88,9 @@ class ActivityFragment : Fragment() {
     private fun render() {
         val events = GitHubData.events
 
-        val commits = events.asSequence().filter { it.type == "PushEvent" }.sumOf { it.commits }
+        val daily = GitHubData.cachedDailyCommits()
+        val cutoff = java.time.LocalDate.now().minusDays(89)
+        val commits = daily.filterKeys { !it.isBefore(cutoff) }.values.sum()
         val prs = events.count { it.type.startsWith("PullRequest") }
         val issues = events.count { it.type == "IssuesEvent" || it.type == "IssueCommentEvent" }
         val stars = events.count { it.type == "WatchEvent" }

@@ -79,7 +79,9 @@ data class GhEvent(
     val title: String? = null,
     val action: String? = null,
     val ref: String? = null,
-    val tag: String? = null
+    val tag: String? = null,
+    val beforeSha: String? = null,
+    val headSha: String? = null
 ) : android.os.Parcelable {
     val createdAt: LocalDate
         get() = LocalDate.ofEpochDay(createdAtEpochDay)
@@ -99,6 +101,8 @@ data class GhEvent(
             var action: String? = null
             var ref: String? = null
             var tag: String? = null
+            var beforeSha: String? = null
+            var headSha: String? = null
 
             val detail = when (type) {
                 "PushEvent" -> {
@@ -108,8 +112,13 @@ data class GhEvent(
                             CommitInfo(c.optString("sha"), c.optString("message"))
                         }
                     } ?: emptyList()
+                    beforeSha = payload.optString("before")
+                    headSha = payload.optString("head")
+                    // GitHub's user-events endpoint no longer includes the commit
+                    // list or size; counts are enriched later via the compare API.
                     commits = if (commitList.isNotEmpty()) commitList.size else payload.optInt("size", 0)
-                    "Pushed $commits commit" + if (commits == 1) "" else "s"
+                    if (commits > 0) "Pushed $commits commit" + if (commits == 1) "" else "s"
+                    else "Pushed changes"
                 }
                 "PullRequestEvent" -> {
                     action = payload.optString("action")
@@ -156,7 +165,7 @@ data class GhEvent(
                 "GollumEvent" -> "Updated the wiki"
                 else -> type.removeSuffix("Event")
             }
-            return GhEvent(type, repo, date, detail, commits, commitList, title, action, ref, tag)
+            return GhEvent(type, repo, date, detail, commits, commitList, title, action, ref, tag, beforeSha, headSha)
         }
     }
 }

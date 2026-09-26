@@ -36,8 +36,10 @@ The token is stored only on your device and is sent only to api.github.com.
 ## Notes
 - Daily commit counts come from the GitHub GraphQL contribution calendar —
   the same data as your profile graph, including private contributions when
-  the token allows — with an Events-API fallback (~90 days, public only).
-  Streaks and the heatmap are computed from that calendar.
+  the token allows — with an Events-API fallback. Streaks and the heatmap
+  are computed from that calendar. Per-push commit counts in the Activity
+  feed come from the GitHub compare API (GitHub's user-events endpoint no
+  longer returns them).
 - Material You dynamic color is used on Android 12+; a custom teal M3 palette
   is the fallback on older versions. Dark mode is fully supported.
 - **Theme options** — System / Light / Dark / Pitch black (true-black AMOLED mode)
