@@ -42,8 +42,20 @@ class ProfileFragment : Fragment() {
         Anim.pressable(b.connectBtn)
         b.refreshBtn.setOnClickListener { refreshNow() }
         b.signoutBtn.setOnClickListener { confirmSignOut() }
+        b.btnTelegram.setOnClickListener {
+            runCatching {
+                startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://t.me/BonkerUnkilBonki")))
+            }
+        }
+        b.btnGithub.setOnClickListener {
+            runCatching {
+                startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://github.com/BonkerUnkilBonki")))
+            }
+        }
+        Anim.pressable(b.btnTelegram, b.btnGithub)
         setupThemeChips()
         setupPaletteRow()
+        setupSyncSwitch()
         renderState()
     }
 
@@ -119,6 +131,29 @@ class ProfileFragment : Fragment() {
             col.addView(circle)
             col.addView(label)
             row.addView(col)
+        }
+    }
+
+    private fun setupSyncSwitch() {
+        b.switchExcludeSync.isChecked = Prefs.excludeSyncCommits
+        b.switchExcludeSync.setOnCheckedChangeListener { _, checked ->
+            Prefs.excludeSyncCommits = checked
+            // Recompute the stats with the new setting right away.
+            if (Prefs.token.isNotBlank()) {
+                viewLifecycleOwner.lifecycleScope.launch {
+                    runCatching { GitHubData.refresh(force = true) }
+                }
+            }
+        }
+
+        b.switchExcludeSyncTasks.isChecked = Prefs.excludeSyncTasks
+        b.switchExcludeSyncTasks.setOnCheckedChangeListener { _, checked ->
+            Prefs.excludeSyncTasks = checked
+        }
+
+        b.switchActivityNotifs.isChecked = Prefs.activityNotifs
+        b.switchActivityNotifs.setOnCheckedChangeListener { _, checked ->
+            Prefs.activityNotifs = checked
         }
     }
 

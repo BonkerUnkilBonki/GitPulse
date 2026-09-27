@@ -64,6 +64,26 @@ object GitHubData {
                     }.getOrDefault(-1)
                 }
 
+                // Exclude gitpulse-sync's automatic commits so the sync
+                // mechanism never inflates real contribution numbers.
+                if (Prefs.excludeSyncCommits) {
+                    val syncDays = runCatching {
+                        GitHubApi.fetchSyncRepoCommitDays(token, u.login)
+                    }.getOrDefault(emptyMap())
+                    if (syncDays.isNotEmpty()) {
+                        daily = daily
+                            .mapValues { (d, v) -> (v - (syncDays[d] ?: 0)).coerceAtLeast(0) }
+                            .filterValues { it > 0 }
+                        if (commitsTotal > 0) {
+                            val yearAgo = LocalDate.now().minusDays(365)
+                            val removed = syncDays.entries
+                                .filter { !it.key.isBefore(yearAgo) }
+                                .sumOf { it.value }
+                            commitsTotal = (commitsTotal - removed).coerceAtLeast(0)
+                        }
+                    }
+                }
+
                 // Rate-limit-prone search: never abort the whole refresh for it.
                 val prs = runCatching {
                     GitHubApi.searchTotal(token, "search/issues", "author:${u.login} type:pr")

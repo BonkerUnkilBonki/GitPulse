@@ -131,7 +131,13 @@ object TaskStore {
      * happened after the task was created. Returns newly completed tasks.
      */
     fun processEvents(events: List<GhEvent>): List<Task> {
-        if (events.isEmpty()) return emptyList()
+        // The sync repo's automatic commits must never auto-complete tasks
+        // (its repo name and "GitPulse: sync tasks" message would match
+        // keywords like "sync" or "gitpulse").
+        val matchable = if (Prefs.excludeSyncTasks) {
+            events.filter { !it.repoName.endsWith("/gitpulse-sync") }
+        } else events
+        if (matchable.isEmpty()) return emptyList()
         val l = list()
         val newly = mutableListOf<Task>()
         var changed = false
@@ -143,7 +149,7 @@ object TaskStore {
                 .filter { it.length >= 2 }
             if (kws.isEmpty()) continue
 
-            for (e in events) {
+            for (e in matchable) {
                 if (e.type !in matchableTypes) continue
                 if (e.createdAtEpochDay < t.createdAtEpochDay) continue
                 val hay = (

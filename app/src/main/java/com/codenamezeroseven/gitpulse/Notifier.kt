@@ -9,6 +9,7 @@ import androidx.core.app.NotificationManagerCompat
 object Notifier {
     private const val CHANNEL_ID = "task_completions"
     private const val SYNC_CHANNEL = "sync_status"
+    private const val ACTIVITY_CHANNEL = "github_activity"
     private const val SYNC_NOTIF_ID = 2001
     lateinit var appContext: Context
 
@@ -28,9 +29,42 @@ object Notifier {
         ).apply {
             description = "Shows a notification whenever your tasks sync with GitHub"
         }
+        val activityChannel = NotificationChannel(
+            ACTIVITY_CHANNEL,
+            "GitHub activity",
+            NotificationManager.IMPORTANCE_DEFAULT
+        ).apply {
+            description = "Notifies when things happen on your GitHub: commits, new repos, PRs, issues, releases, stars"
+        }
         val nm = appContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         nm.createNotificationChannel(channel)
         nm.createNotificationChannel(syncChannel)
+        nm.createNotificationChannel(activityChannel)
+    }
+
+    /** One notification per new GitHub event (max a few per check). */
+    fun notifyActivity(events: List<com.codenamezeroseven.gitpulse.GhEvent>) {
+        if (events.isEmpty() || !::appContext.isInitialized) return
+        val nm = NotificationManagerCompat.from(appContext)
+        if (!nm.areNotificationsEnabled()) return
+        val launchIntent = appContext.packageManager
+            .getLaunchIntentForPackage(appContext.packageName)
+        val contentIntent = android.app.PendingIntent.getActivity(
+            appContext, 0, launchIntent,
+            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+        )
+        for (e in events) {
+            val style = com.codenamezeroseven.gitpulse.ui.EventVisual.of(e.type)
+            val extra = e.title?.let { " - " + it } ?: ""
+            val notif = NotificationCompat.Builder(appContext, ACTIVITY_CHANNEL)
+                .setSmallIcon(style.icon)
+                .setContentTitle(e.detail + extra)
+                .setContentText(e.repoName)
+                .setContentIntent(contentIntent)
+                .setAutoCancel(true)
+                .build()
+            runCatching { nm.notify((e.id % 100000L).toInt(), notif) }
+        }
     }
 
     fun notifySync(text: String) {

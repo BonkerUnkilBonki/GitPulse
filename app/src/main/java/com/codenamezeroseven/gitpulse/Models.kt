@@ -81,13 +81,15 @@ data class GhEvent(
     val ref: String? = null,
     val tag: String? = null,
     val beforeSha: String? = null,
-    val headSha: String? = null
+    val headSha: String? = null,
+    val id: Long = 0L
 ) : android.os.Parcelable {
     val createdAt: LocalDate
         get() = LocalDate.ofEpochDay(createdAtEpochDay)
 
     companion object {
         fun fromJson(o: JSONObject): GhEvent {
+            val id = o.optString("id").toLongOrNull() ?: 0L
             val type = o.optString("type")
             val repo = o.optJSONObject("repo")?.optString("name") ?: ""
             val date = runCatching {
@@ -165,7 +167,7 @@ data class GhEvent(
                 "GollumEvent" -> "Updated the wiki"
                 else -> type.removeSuffix("Event")
             }
-            return GhEvent(type, repo, date, detail, commits, commitList, title, action, ref, tag, beforeSha, headSha)
+            return GhEvent(type, repo, date, detail, commits, commitList, title, action, ref, tag, beforeSha, headSha, id)
         }
     }
 }

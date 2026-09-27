@@ -32,6 +32,22 @@ object Prefs {
         get() = sp.getString("ownerLogin", "") ?: ""
         set(value) { sp.edit().putString("ownerLogin", value).apply() }
 
+    var excludeSyncCommits: Boolean
+        get() = sp.getBoolean("excludeSyncCommits", true)
+        set(value) { sp.edit().putBoolean("excludeSyncCommits", value).apply() }
+
+    var excludeSyncTasks: Boolean
+        get() = sp.getBoolean("excludeSyncTasks", true)
+        set(value) { sp.edit().putBoolean("excludeSyncTasks", value).apply() }
+
+    var activityNotifs: Boolean
+        get() = sp.getBoolean("activityNotifs", true)
+        set(value) { sp.edit().putBoolean("activityNotifs", value).apply() }
+
+    var lastSeenEventId: Long
+        get() = sp.getLong("lastSeenEventId", 0L)
+        set(value) { sp.edit().putLong("lastSeenEventId", value).apply() }
+
     var goalsUpdatedAt: Long
         get() = sp.getLong("goalsUpdatedAt", 0L)
         set(value) { sp.edit().putLong("goalsUpdatedAt", value).apply() }

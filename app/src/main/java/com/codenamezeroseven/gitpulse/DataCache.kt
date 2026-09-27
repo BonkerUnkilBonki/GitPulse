@@ -55,6 +55,7 @@ object DataCache {
                 e.tag?.let { eo.put("tag", it) }
                 e.beforeSha?.let { eo.put("before", it) }
                 e.headSha?.let { eo.put("head", it) }
+                eo.put("id", e.id)
                 ev.put(eo)
             }
             o.put("events", ev)
@@ -126,7 +127,8 @@ object DataCache {
                     ref = e.strOrNull("ref"),
                     tag = e.strOrNull("tag"),
                     beforeSha = e.strOrNull("before"),
-                    headSha = e.strOrNull("head")
+                    headSha = e.strOrNull("head"),
+                    id = e.optLong("id", 0L)
                 )
             }
             GitHubData.events = evs

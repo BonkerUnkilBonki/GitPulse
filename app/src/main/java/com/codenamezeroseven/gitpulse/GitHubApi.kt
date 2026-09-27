@@ -204,6 +204,64 @@ object GitHubApi {
         }
     }
 
+    /** Fetch a single repo by full name, or null. */
+    suspend fun fetchRepo(token: String, fullName: String): Repo? {
+        val (code, text) = request(token, "/repos/$fullName")
+        if (code != 200) return null
+        return runCatching { Repo.fromJson(JSONObject(text)) }.getOrNull()
+    }
+
+    /** Recent commits of any repo: (sha, message, date). Null when not loadable. */
+    suspend fun fetchRepoCommits(
+        token: String, repoFullName: String, limit: Int = 15
+    ): List<Triple<String, String, LocalDate>>? {
+        val (code, text) = request(token, "/repos/$repoFullName/commits?per_page=$limit")
+        if (code != 200) return null
+        return runCatching {
+            val arr = JSONArray(text)
+            (0 until arr.length()).mapNotNull { i ->
+                val o = arr.optJSONObject(i) ?: return@mapNotNull null
+                val sha = o.optString("sha").take(7)
+                val c = o.optJSONObject("commit") ?: JSONObject()
+                val msg = c.optString("message").lineSequence().firstOrNull() ?: ""
+                val d = c.optJSONObject("committer")?.optString("date")?.take(10)
+                val day = runCatching { LocalDate.parse(d) }.getOrNull() ?: LocalDate.now()
+                Triple(sha, msg, day)
+            }
+        }.getOrNull()
+    }
+
+    /** Decoded README of a repo, or null when there is none. */
+    suspend fun fetchReadme(token: String, repoFullName: String): String? {
+        val (code, text) = request(token, "/repos/$repoFullName/readme")
+        if (code != 200) return null
+        return runCatching {
+            val o = JSONObject(text)
+            val content = o.optString("content").replace("\n", "")
+            String(android.util.Base64.decode(content, android.util.Base64.DEFAULT))
+        }.getOrNull()
+    }
+
+    /** Day -> commit count for the private sync repo (up to 200 commits). */
+    suspend fun fetchSyncRepoCommitDays(token: String, owner: String): Map<LocalDate, Int> {
+        val out = mutableMapOf<LocalDate, Int>()
+        var page = 1
+        while (page <= 2) {
+            val (code, text) = request(token, "/repos/$owner/gitpulse-sync/commits?per_page=100&page=$page")
+            if (code != 200) break
+            val arr = runCatching { JSONArray(text) }.getOrNull() ?: break
+            for (i in 0 until arr.length()) {
+                val o = arr.optJSONObject(i) ?: continue
+                val d = o.optJSONObject("commit")?.optJSONObject("committer")?.optString("date")?.take(10)
+                val day = runCatching { LocalDate.parse(d) }.getOrNull() ?: continue
+                out[day] = (out[day] ?: 0) + 1
+            }
+            if (arr.length() < 100) break
+            page++
+        }
+        return out
+    }
+
     suspend fun fetchBytes(url: String): ByteArray? = withContext(Dispatchers.IO) {
         runCatching {
             val req = Request.Builder().url(url).build()

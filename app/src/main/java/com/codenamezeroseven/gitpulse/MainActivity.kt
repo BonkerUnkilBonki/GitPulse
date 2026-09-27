@@ -10,7 +10,6 @@ import androidx.fragment.app.Fragment
 import com.codenamezeroseven.gitpulse.databinding.ActivityMainBinding
 import com.codenamezeroseven.gitpulse.ui.ActivityFragment
 import com.codenamezeroseven.gitpulse.ui.DashboardFragment
-import com.codenamezeroseven.gitpulse.ui.GoalsFragment
 import com.codenamezeroseven.gitpulse.ui.ProfileFragment
 import com.codenamezeroseven.gitpulse.ui.ReposFragment
 import com.codenamezeroseven.gitpulse.ui.TasksFragment
@@ -25,7 +24,6 @@ class MainActivity : AppCompatActivity() {
     private val activityFrag = ActivityFragment()
     private val repos = ReposFragment()
     private val tasks = TasksFragment()
-    private val goals = GoalsFragment()
     private val profile = ProfileFragment()
     private var current: Fragment = dashboard
 
@@ -55,7 +53,6 @@ class MainActivity : AppCompatActivity() {
 
         supportFragmentManager.beginTransaction()
             .add(R.id.container, profile).hide(profile)
-            .add(R.id.container, goals).hide(goals)
             .add(R.id.container, repos).hide(repos)
             .add(R.id.container, tasks).hide(tasks)
             .add(R.id.container, activityFrag).hide(activityFrag)
@@ -68,7 +65,6 @@ class MainActivity : AppCompatActivity() {
                 R.id.nav_activity -> activityFrag
                 R.id.nav_repos -> repos
                 R.id.nav_tasks -> tasks
-                R.id.nav_goals -> goals
                 else -> profile
             }
             if (f !== current) {

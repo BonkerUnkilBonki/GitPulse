@@ -11,11 +11,16 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.os.bundleOf
 import androidx.fragment.app.FragmentManager
+import androidx.lifecycle.lifecycleScope
 import com.codenamezeroseven.gitpulse.CommitInfo
 import com.codenamezeroseven.gitpulse.GhEvent
+import com.codenamezeroseven.gitpulse.GitHubApi
+import com.codenamezeroseven.gitpulse.Prefs
 import com.codenamezeroseven.gitpulse.TimeAgo
+import kotlinx.coroutines.launch
 import com.codenamezeroseven.gitpulse.databinding.SheetEventDetailBinding
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.color.MaterialColors
@@ -105,9 +110,25 @@ class EventDetailSheet : BottomSheetDialogFragment() {
             }
         }
 
-        b.openBtn.setOnClickListener {
-            runCatching {
-                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/${e.repoName}")))
+        // In-app navigation: load the repo and open its detail sheet with
+        // recent commits and README instead of leaving the app.
+        b.openBtn.text = "View repository"
+        b.openBtn.setOnClickListener { view ->
+            val act = view.context as? AppCompatActivity ?: return@setOnClickListener
+            if (Prefs.token.isBlank()) return@setOnClickListener
+            b.openBtn.isEnabled = false
+            viewLifecycleOwner.lifecycleScope.launch {
+                val repo = runCatching {
+                    GitHubApi.fetchRepo(Prefs.token, e.repoName)
+                }.getOrNull()
+                if (_b != null) b.openBtn.isEnabled = true
+                if (repo != null) {
+                    RepoDetailSheet.show(act.supportFragmentManager, repo)
+                } else {
+                    android.widget.Toast.makeText(
+                        view.context, "Could not load this repository", android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                }
             }
         }
     }

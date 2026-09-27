@@ -239,7 +239,96 @@
                     </com.google.android.material.card.MaterialCardView>
                 </LinearLayout>
 
-                <com.google.android.material.card.MaterialCardView
+                                <com.google.android.material.card.MaterialCardView
+                    style="?attr/materialCardViewFilledStyle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    app:cardCornerRadius="32dp"
+                    app:cardElevation="0dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="20dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Weekly goal"
+                            android:textAppearance="?attr/textAppearanceTitleLarge"
+                            android:textStyle="bold" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <com.codenamezeroseven.gitpulse.ui.RingView
+                                android:id="@+id/weekRing"
+                                android:layout_width="96dp"
+                                android:layout_height="96dp" />
+
+                            <TextView
+                                android:id="@+id/weekCaption"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="16dp"
+                                android:layout_weight="1"
+                                android:text="0 of 15 commits this week"
+                                android:textAppearance="?attr/textAppearanceBodyLarge" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:orientation="horizontal">
+
+                            <com.google.android.material.textfield.TextInputLayout
+                                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:hint="Commits per day">
+
+                                <com.google.android.material.textfield.TextInputEditText
+                                    android:id="@+id/dailyValue"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:gravity="center"
+                                    android:imeOptions="actionDone"
+                                    android:inputType="number"
+                                    android:maxLines="1"
+                                    android:textAppearance="?attr/textAppearanceTitleLarge" />
+                            </com.google.android.material.textfield.TextInputLayout>
+
+                            <com.google.android.material.textfield.TextInputLayout
+                                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:layout_weight="1"
+                                android:hint="Commits per week">
+
+                                <com.google.android.material.textfield.TextInputEditText
+                                    android:id="@+id/weeklyValue"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:gravity="center"
+                                    android:imeOptions="actionDone"
+                                    android:inputType="number"
+                                    android:maxLines="1"
+                                    android:textAppearance="?attr/textAppearanceTitleLarge" />
+                            </com.google.android.material.textfield.TextInputLayout>
+                        </LinearLayout>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+<com.google.android.material.card.MaterialCardView
                     style="?attr/materialCardViewFilledStyle"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -312,6 +401,52 @@
                             android:layout_marginTop="12dp" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    style="?attr/materialCardViewFilledStyle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    app:cardCornerRadius="32dp"
+                    app:cardElevation="0dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="20dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Goal history"
+                            android:textAppearance="?attr/textAppearanceTitleLarge"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="Tinted days met your daily goal - last 5 weeks"
+                            android:textAppearance="?attr/textAppearanceBodyMedium"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
+
+                        <com.codenamezeroseven.gitpulse.ui.HeatmapView
+                            android:id="@+id/goalHeatmap"
+                            android:layout_width="match_parent"
+                            android:layout_height="130dp"
+                            android:layout_marginTop="12dp" />
+
+                        <TextView
+                            android:id="@+id/goalHistorySummary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:textAppearance="?attr/textAppearanceBodyMedium"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
 
                 <com.google.android.material.card.MaterialCardView
                     style="?attr/materialCardViewFilledStyle"

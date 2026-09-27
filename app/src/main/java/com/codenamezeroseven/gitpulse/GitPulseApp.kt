@@ -13,6 +13,19 @@ class GitPulseApp : Application() {
         Notifier.createChannel()
         DataCache.appContext = this
         DataCache.load()
+
+        // Periodic background check for GitHub activity + task sync.
+        val constraints = androidx.work.Constraints.Builder()
+            .setRequiredNetworkType(androidx.work.NetworkType.CONNECTED)
+            .build()
+        val request = androidx.work.PeriodicWorkRequestBuilder<ActivityWorker>(
+            15, java.util.concurrent.TimeUnit.MINUTES
+        ).setConstraints(constraints).build()
+        androidx.work.WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            "gitpulse_activity",
+            androidx.work.ExistingPeriodicWorkPolicy.KEEP,
+            request
+        )
         // Material You dynamic color from the wallpaper - opt-in on the
         // Profile tab (needs Android 12+).
         if (android.os.Build.VERSION.SDK_INT >= 31 && Prefs.palette == "dynamic") {
