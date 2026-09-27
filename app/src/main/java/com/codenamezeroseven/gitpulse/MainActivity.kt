@@ -12,6 +12,7 @@ import com.codenamezeroseven.gitpulse.ui.DashboardFragment
 import com.codenamezeroseven.gitpulse.ui.GoalsFragment
 import com.codenamezeroseven.gitpulse.ui.ProfileFragment
 import com.codenamezeroseven.gitpulse.ui.ReposFragment
+import com.codenamezeroseven.gitpulse.ui.TasksFragment
 
 
 class MainActivity : AppCompatActivity() {
@@ -20,6 +21,7 @@ class MainActivity : AppCompatActivity() {
     private val dashboard = DashboardFragment()
     private val activityFrag = ActivityFragment()
     private val repos = ReposFragment()
+    private val tasks = TasksFragment()
     private val goals = GoalsFragment()
     private val profile = ProfileFragment()
     private var current: Fragment = dashboard
@@ -36,7 +38,11 @@ class MainActivity : AppCompatActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(0, bars.top, 0, bars.bottom)
+            // Pad only the top (status bar) on the root. The bottom nav pads
+            // itself so its surface extends behind the system 3-button /
+            // gesture bar - no gap, no duplicated bar.
+            v.setPadding(0, bars.top, 0, 0)
+            binding.bottomNav.setPadding(0, 0, 0, bars.bottom)
             insets
         }
 
@@ -44,6 +50,7 @@ class MainActivity : AppCompatActivity() {
             .add(R.id.container, profile).hide(profile)
             .add(R.id.container, goals).hide(goals)
             .add(R.id.container, repos).hide(repos)
+            .add(R.id.container, tasks).hide(tasks)
             .add(R.id.container, activityFrag).hide(activityFrag)
             .add(R.id.container, dashboard)
             .commit()
@@ -53,6 +60,7 @@ class MainActivity : AppCompatActivity() {
                 R.id.nav_dashboard -> dashboard
                 R.id.nav_activity -> activityFrag
                 R.id.nav_repos -> repos
+                R.id.nav_tasks -> tasks
                 R.id.nav_goals -> goals
                 else -> profile
             }

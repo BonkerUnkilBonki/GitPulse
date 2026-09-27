@@ -20,6 +20,7 @@ import com.codenamezeroseven.gitpulse.databinding.SheetEventDetailBinding
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.R as MaterialR
+import androidx.appcompat.R as AppCompatR
 import java.time.format.DateTimeFormatter
 import kotlin.math.roundToInt
 
@@ -38,9 +39,16 @@ class EventDetailSheet : BottomSheetDialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         // Paint the sheet container with the activity's surface color so the
         // sheet matches the app theme (dynamic color / pitch black included).
-        dialog?.findViewById<View>(MaterialR.id.design_bottom_sheet)?.setBackgroundColor(
-            MaterialColors.getColor(requireActivity(), MaterialR.attr.colorSurface, "surface")
+        val sheet = dialog?.findViewById<View>(MaterialR.id.design_bottom_sheet)
+        val surface = MaterialColors.getColor(requireActivity(), MaterialR.attr.colorSurface, "surface")
+        val shape = com.google.android.material.shape.MaterialShapeDrawable(
+            com.google.android.material.shape.ShapeAppearanceModel.builder()
+                .setTopLeftCorner(com.google.android.material.shape.CornerFamily.ROUNDED, dp(32).toFloat())
+                .setTopRightCorner(com.google.android.material.shape.CornerFamily.ROUNDED, dp(32).toFloat())
+                .build()
         )
+        shape.fillColor = ColorStateList.valueOf(surface)
+        sheet?.background = shape
         val e = requireArguments().getParcelable<GhEvent>("event")
         if (e == null) {
             dismiss()
@@ -117,7 +125,7 @@ class EventDetailSheet : BottomSheetDialogFragment() {
             text = c.sha.take(7)
             typeface = Typeface.MONOSPACE
             setTextAppearance(ctx, MaterialR.style.TextAppearance_Material3_LabelMedium)
-            setTextColor(MaterialColors.getColor(ctx, MaterialR.attr.colorPrimary, "p"))
+            setTextColor(MaterialColors.getColor(ctx, AppCompatR.attr.colorPrimary, "p"))
         }
         val msg = TextView(ctx).apply {
             text = c.message.lineSequence().firstOrNull() ?: ""

@@ -22,6 +22,18 @@ heatmap, recent activity, repositories and goal tracking.
 - **Goals** — set a daily and weekly commit goal with steppers, weekly progress
   ring, 5-week goal history heatmap, current / best streak, active days,
   all-time commits.
+- **Tasks** — a to-do list with GitHub superpowers. Add a task with optional
+  keywords (e.g. "deploy, readme, login"). Tasks complete manually via the
+  checkbox, or automatically when your GitHub commits, branches, releases or
+  PRs mention those keywords — and you get a system notification when it
+  happens. Keyword matching looks at commit messages, repo names, branch/tag
+  names, PR and issue titles, and only counts activity after the task was
+  created.
+- **Task sync across devices** — tasks are stored as `tasks.json` in a private
+  repo `gitpulse-sync` that GitPulse creates automatically on first sync.
+  Every refresh pulls and merges (newest change wins per task; deletions
+  propagate via tombstones), then pushes the merged state if anything
+  differed. Works with any device signed into the same GitHub account.
 - **Profile** — connect with a GitHub personal access token, avatar, bio,
   follower stats, refresh, sign out.
 

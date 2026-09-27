@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.EditorInfo
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
@@ -13,6 +14,7 @@ import com.codenamezeroseven.gitpulse.Prefs
 import com.codenamezeroseven.gitpulse.StatsEngine
 import com.codenamezeroseven.gitpulse.databinding.FragmentGoalsBinding
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 
 class GoalsFragment : Fragment() {
 
@@ -31,10 +33,25 @@ class GoalsFragment : Fragment() {
         b.swipe.setOnChildScrollUpCallback { _, _ -> b.content.canScrollVertically(-1) }
         b.connectBtn.setOnClickListener { (activity as? MainActivity)?.openProfile() }
 
-        b.dailyMinus.setOnClickListener { Prefs.dailyGoal = Prefs.dailyGoal - 1; render() }
-        b.dailyPlus.setOnClickListener { Prefs.dailyGoal = Prefs.dailyGoal + 1; render() }
-        b.weeklyMinus.setOnClickListener { Prefs.weeklyGoal = Prefs.weeklyGoal - 1; render() }
-        b.weeklyPlus.setOnClickListener { Prefs.weeklyGoal = Prefs.weeklyGoal + 1; render() }
+        b.dailyValue.setText(Prefs.dailyGoal.toString())
+        b.weeklyValue.setText(Prefs.weeklyGoal.toString())
+
+        b.dailyValue.setOnEditorActionListener { v, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_DONE) {
+                saveGoals()
+                v.clearFocus()
+                true
+            } else false
+        }
+        b.weeklyValue.setOnEditorActionListener { v, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_DONE) {
+                saveGoals()
+                v.clearFocus()
+                true
+            } else false
+        }
+        b.dailyValue.setOnFocusChangeListener { _, hasFocus -> if (!hasFocus) saveGoals() }
+        b.weeklyValue.setOnFocusChangeListener { _, hasFocus -> if (!hasFocus) saveGoals() }
 
         if (Prefs.token.isBlank()) showDisconnected() else load(false)
     }
@@ -83,11 +100,18 @@ class GoalsFragment : Fragment() {
         }
     }
 
+    private fun saveGoals() {
+        val d = b.dailyValue.text?.toString()?.toIntOrNull() ?: Prefs.dailyGoal
+        val w = b.weeklyValue.text?.toString()?.toIntOrNull() ?: Prefs.weeklyGoal
+        Prefs.dailyGoal = d
+        Prefs.weeklyGoal = w
+        b.dailyValue.setText(Prefs.dailyGoal.toString())
+        b.weeklyValue.setText(Prefs.weeklyGoal.toString())
+        render()
+    }
+
     private fun render() {
         val daily = GitHubData.cachedDailyCommits()
-
-        b.dailyValue.text = Prefs.dailyGoal.toString()
-        b.weeklyValue.text = Prefs.weeklyGoal.toString()
 
         val weekTotal = StatsEngine.weeklyTotal(daily)
         b.weekCaption.text = "$weekTotal of ${Prefs.weeklyGoal} commits this week"
@@ -95,9 +119,16 @@ class GoalsFragment : Fragment() {
 
         b.goalHeatmap.setData(daily, weeks = 5, threshold = Prefs.dailyGoal)
 
+        var met = 0
+        for (i in 0 until 35) {
+            val day = LocalDate.now().minusDays(i.toLong())
+            if ((daily[day] ?: 0) >= Prefs.dailyGoal) met++
+        }
+        b.goalHistorySummary.text = "$met of the last 35 days met your daily goal"
+
         b.streakValue.text = StatsEngine.streak(daily).toString() + " days"
         b.bestValue.text = StatsEngine.bestStreak(daily).toString() + " days"
-        val cutoff = java.time.LocalDate.now().minusDays(89)
+        val cutoff = LocalDate.now().minusDays(89)
         b.activeValue.text = daily.count { it.value > 0 && !it.key.isBefore(cutoff) }.toString()
         b.totalValue.text = if (GitHubData.totalCommits >= 0) GitHubData.totalCommits.toString() else "…"
     }

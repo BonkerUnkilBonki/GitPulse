@@ -91,6 +91,9 @@ class DashboardFragment : Fragment() {
         b.todayCommits.text = today.toString()
         b.goalCaption.text = "of ${Prefs.dailyGoal} commits today"
         b.ring.setProgress(today.toFloat() / Prefs.dailyGoal, animate = true)
+        b.todayWave.setProgress(
+            ((today.toFloat() / Prefs.dailyGoal).coerceIn(0f, 1f) * 100).toInt()
+        )
 
         val streak = StatsEngine.streak(daily)
         b.streakChip.text = if (streak > 0) "$streak day streak" else "No streak yet — commit today"

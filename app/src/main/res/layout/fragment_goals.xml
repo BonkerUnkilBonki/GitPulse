@@ -93,45 +93,29 @@
                             android:textAppearance="?attr/textAppearanceTitleLarge"
                             android:textStyle="bold" />
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:text="Commits per day"
-                            android:textAppearance="?attr/textAppearanceBodyMedium"
-                            android:textColor="?attr/colorOnSurfaceVariant" />
 
-                        <LinearLayout
+                        <com.google.android.material.textfield.TextInputLayout
+                            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            app:boxCornerRadiusTopStart="20dp"
+            app:boxCornerRadiusTopEnd="20dp"
+            app:boxCornerRadiusBottomStart="20dp"
+            app:boxCornerRadiusBottomEnd="20dp"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="16dp"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
+                            android:hint="Commits per day">
 
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/dailyMinus"
-                                style="?attr/materialButtonOutlinedStyle"
-                                android:layout_width="56dp"
-                                android:layout_height="56dp"
-                                android:text="-" />
-
-                            <TextView
+                            <com.google.android.material.textfield.TextInputEditText
                                 android:id="@+id/dailyValue"
-                                android:layout_width="0dp"
+                                android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:layout_weight="1"
                                 android:gravity="center"
-                                android:text="3"
-                                android:textAppearance="?attr/textAppearanceDisplayMedium"
+                                android:imeOptions="actionDone"
+                                android:inputType="number"
+                                android:maxLines="1"
+                                android:textAppearance="?attr/textAppearanceHeadlineMedium"
                                 android:textStyle="bold" />
-
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/dailyPlus"
-                                style="?attr/materialButtonOutlinedStyle"
-                                android:layout_width="56dp"
-                                android:layout_height="56dp"
-                                android:text="+" />
-                        </LinearLayout>
+                        </com.google.android.material.textfield.TextInputLayout>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
@@ -156,45 +140,29 @@
                             android:textAppearance="?attr/textAppearanceTitleLarge"
                             android:textStyle="bold" />
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:text="Commits per week"
-                            android:textAppearance="?attr/textAppearanceBodyMedium"
-                            android:textColor="?attr/colorOnSurfaceVariant" />
 
-                        <LinearLayout
+                        <com.google.android.material.textfield.TextInputLayout
+                            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            app:boxCornerRadiusTopStart="20dp"
+            app:boxCornerRadiusTopEnd="20dp"
+            app:boxCornerRadiusBottomStart="20dp"
+            app:boxCornerRadiusBottomEnd="20dp"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="16dp"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
+                            android:hint="Commits per week">
 
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/weeklyMinus"
-                                style="?attr/materialButtonOutlinedStyle"
-                                android:layout_width="56dp"
-                                android:layout_height="56dp"
-                                android:text="-" />
-
-                            <TextView
+                            <com.google.android.material.textfield.TextInputEditText
                                 android:id="@+id/weeklyValue"
-                                android:layout_width="0dp"
+                                android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:layout_weight="1"
                                 android:gravity="center"
-                                android:text="15"
-                                android:textAppearance="?attr/textAppearanceDisplayMedium"
+                                android:imeOptions="actionDone"
+                                android:inputType="number"
+                                android:maxLines="1"
+                                android:textAppearance="?attr/textAppearanceHeadlineMedium"
                                 android:textStyle="bold" />
-
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/weeklyPlus"
-                                style="?attr/materialButtonOutlinedStyle"
-                                android:layout_width="56dp"
-                                android:layout_height="56dp"
-                                android:text="+" />
-                        </LinearLayout>
+                        </com.google.android.material.textfield.TextInputLayout>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
@@ -232,6 +200,14 @@
                             android:layout_width="match_parent"
                             android:layout_height="130dp"
                             android:layout_marginTop="12dp" />
+
+                        <TextView
+                            android:id="@+id/goalHistorySummary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:textAppearance="?attr/textAppearanceBodyMedium"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 

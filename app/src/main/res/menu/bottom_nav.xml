@@ -17,6 +17,10 @@
         android:icon="@drawable/ic_nav_goals"
         android:title="Goals" />
     <item
+        android:id="@+id/nav_tasks"
+        android:icon="@drawable/ic_nav_tasks"
+        android:title="Tasks" />
+    <item
         android:id="@+id/nav_profile"
         android:icon="@drawable/ic_nav_profile"
         android:title="Profile" />

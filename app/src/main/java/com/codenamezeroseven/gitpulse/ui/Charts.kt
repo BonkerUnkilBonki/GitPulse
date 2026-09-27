@@ -13,6 +13,7 @@ import android.view.View
 import android.view.animation.DecelerateInterpolator
 import android.widget.Toast
 import com.google.android.material.R as MaterialR
+import androidx.appcompat.R as AppCompatR
 import com.google.android.material.color.MaterialColors
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -54,7 +55,7 @@ class BarChartView @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas) {
         if (values.isEmpty()) return
-        barPaint.color = MaterialColors.getColor(context, MaterialR.attr.colorPrimary, "p")
+        barPaint.color = MaterialColors.getColor(context, AppCompatR.attr.colorPrimary, "p")
         barDimPaint.color = MaterialColors.getColor(context, MaterialR.attr.colorPrimaryContainer, "p")
         todayPaint.color = MaterialColors.getColor(context, MaterialR.attr.colorTertiary, "t")
         goalPaint.color = MaterialColors.getColor(context, MaterialR.attr.colorOutline, "o")
@@ -67,7 +68,7 @@ class BarChartView @JvmOverloads constructor(
         val topPad = 16f * density
         val chartH = height - labelH - topPad
         val slot = width.toFloat() / n
-        val barW = slot * 0.52f
+        val barW = slot * 0.62f
         val radius = barW / 2f
 
         for (i in values.indices) {
@@ -124,11 +125,11 @@ class HeatmapView @JvmOverloads constructor(
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
         cellSize = w.toFloat() / weeks
-        gap = min(6f, cellSize * 0.18f)
+        gap = min(5f, cellSize * 0.15f)
     }
 
     override fun onDraw(canvas: Canvas) {
-        val primary = MaterialColors.getColor(context, MaterialR.attr.colorPrimary, "p")
+        val primary = MaterialColors.getColor(context, AppCompatR.attr.colorPrimary, "p")
         val emptyColor = MaterialColors.getColor(context, MaterialR.attr.colorSurfaceVariant, "s")
         val maxV = (daily.values.maxOrNull() ?: 0).coerceAtLeast(1)
         val today = LocalDate.now()
@@ -138,7 +139,13 @@ class HeatmapView @JvmOverloads constructor(
                 if (date.isAfter(today)) continue
                 val v = daily[date] ?: 0
                 if (threshold > 0) {
-                    paint.color = if (v >= threshold) primary else emptyColor
+                    // Goal mode: full tint = goal met, light tint = some
+                    // activity below goal, grey = nothing.
+                    when {
+                        v >= threshold -> { paint.color = primary; paint.alpha = 255 }
+                        v > 0 -> { paint.color = primary; paint.alpha = 110 }
+                        else -> { paint.color = emptyColor; paint.alpha = 210 }
+                    }
                 } else {
                     when {
                         v == 0 -> {
@@ -155,7 +162,7 @@ class HeatmapView @JvmOverloads constructor(
                 val cx = w * cellSize + gap / 2f
                 val cy = r * cellSize + gap / 2f
                 rect.set(cx, cy, cx + cellSize - gap, cy + cellSize - gap)
-                canvas.drawRoundRect(rect, cellSize * 0.3f, cellSize * 0.3f, paint)
+                canvas.drawRoundRect(rect, cellSize * 0.38f, cellSize * 0.38f, paint)
             }
         }
         paint.alpha = 255
@@ -170,7 +177,7 @@ class HeatmapView @JvmOverloads constructor(
                 if (!date.isAfter(LocalDate.now())) {
                     val v = daily[date] ?: 0
                     val extra = if (threshold > 0) {
-                        if (v >= threshold) " — goal met" else " — goal missed"
+                        if (v >= threshold) " — goal met" else " — below goal of $threshold"
                     } else ""
                     Toast.makeText(
                         context,
@@ -220,11 +227,11 @@ class RingView @JvmOverloads constructor(
     }
 
     override fun onDraw(canvas: Canvas) {
-        val stroke = 10f * density
+        val stroke = 13f * density
         trackPaint.strokeWidth = stroke
         sweepPaint.strokeWidth = stroke
         trackPaint.color = MaterialColors.getColor(context, MaterialR.attr.colorSurfaceVariant, "s")
-        sweepPaint.color = MaterialColors.getColor(context, MaterialR.attr.colorPrimary, "p")
+        sweepPaint.color = MaterialColors.getColor(context, AppCompatR.attr.colorPrimary, "p")
         val inset = stroke / 2f + 1f
         val d = min(width, height).toFloat() - inset * 2f
         val rect = RectF(inset, (height - d) / 2f, inset + d, (height + d) / 2f)

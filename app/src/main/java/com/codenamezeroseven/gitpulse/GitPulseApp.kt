@@ -8,6 +8,9 @@ class GitPulseApp : Application() {
     override fun onCreate() {
         super.onCreate()
         Prefs.init(this)
+        TaskStore.init(this)
+        Notifier.appContext = this
+        Notifier.createChannel()
         DynamicColors.applyToActivitiesIfAvailable(this)
         applyNightMode()
     }

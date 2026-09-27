@@ -33,9 +33,16 @@ class RepoDetailSheet : BottomSheetDialogFragment() {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        dialog?.findViewById<View>(MaterialR.id.design_bottom_sheet)?.setBackgroundColor(
-            MaterialColors.getColor(requireActivity(), MaterialR.attr.colorSurface, "surface")
+        val sheet = dialog?.findViewById<View>(MaterialR.id.design_bottom_sheet)
+        val surface = MaterialColors.getColor(requireActivity(), MaterialR.attr.colorSurface, "surface")
+        val shape = com.google.android.material.shape.MaterialShapeDrawable(
+            com.google.android.material.shape.ShapeAppearanceModel.builder()
+                .setTopLeftCorner(com.google.android.material.shape.CornerFamily.ROUNDED, dp(32).toFloat())
+                .setTopRightCorner(com.google.android.material.shape.CornerFamily.ROUNDED, dp(32).toFloat())
+                .build()
         )
+        shape.fillColor = ColorStateList.valueOf(surface)
+        sheet?.background = shape
         val r = requireArguments().getParcelable<Repo>("repo")
         if (r == null) {
             dismiss()

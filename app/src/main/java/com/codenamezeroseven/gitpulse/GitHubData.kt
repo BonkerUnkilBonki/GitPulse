@@ -46,6 +46,15 @@ object GitHubData {
 
                 val prs = GitHubApi.searchTotal(token, "search/issues", "author:${u.login} type:pr")
 
+                // Auto-complete tasks whose keywords match recent GitHub activity
+                val completedTasks = TaskStore.processEvents(ev)
+                if (completedTasks.isNotEmpty()) {
+                    Notifier.notifyCompleted(completedTasks)
+                }
+
+                // Sync tasks across devices via the private sync repo
+                runCatching { TaskSync.sync(token, u.login) }
+
                 user = u
                 events = ev
                 repos = reps

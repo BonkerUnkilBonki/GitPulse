@@ -28,6 +28,10 @@ object Prefs {
         get() = sp.getString("theme", "system") ?: "system"
         set(value) { sp.edit().putString("theme", value).apply() }
 
+    var notifAsked: Boolean
+        get() = sp.getBoolean("notifAsked", false)
+        set(value) { sp.edit().putBoolean("notifAsked", value).apply() }
+
     fun dailyCommits(): Map<LocalDate, Int> {
         val raw = sp.getString("dailyCommits", null) ?: return emptyMap()
         return runCatching {
