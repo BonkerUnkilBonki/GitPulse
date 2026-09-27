@@ -77,6 +77,7 @@ class ReposFragment : Fragment() {
             b.swipe.isRefreshing = false
             result.onSuccess { render() }
                 .onFailure { e ->
+                    if (e is kotlinx.coroutines.CancellationException) return@launch
                     Toast.makeText(requireContext(), e.message ?: "Failed to load", Toast.LENGTH_LONG).show()
                     render()
                 }

@@ -176,10 +176,15 @@ object TaskStore {
         list().forEach { arr.put(taskToJson(it)) }
         o.put("tasks", arr)
         o.put("deleted", JSONArray(deletedIds()))
+        o.put("settings", JSONObject()
+            .put("dailyGoal", Prefs.dailyGoal)
+            .put("weeklyGoal", Prefs.weeklyGoal)
+            .put("goalsUpdatedAt", Prefs.goalsUpdatedAt))
         return o.toString()
     }
 
-    fun mergeFromRemoteJson(raw: String): Boolean {
+    /** Parse the sync file: tasks, tombstones and synced goal settings. */
+    fun parseFile(raw: String): Triple<List<Task>, Set<Long>, SyncSettings?> {
         return runCatching {
             val o = JSONObject(raw)
             val arr = o.optJSONArray("tasks") ?: JSONArray()
@@ -190,21 +195,32 @@ object TaskStore {
             val deleted = mutableSetOf<Long>()
             val d = o.optJSONArray("deleted")
             if (d != null) for (i in 0 until d.length()) deleted += d.optLong(i)
-            mergeFromRemote(tasks, deleted)
-        }.getOrDefault(false)
+            val so = o.optJSONObject("settings")
+            val settings = if (so != null) SyncSettings(
+                dailyGoal = so.optInt("dailyGoal"),
+                weeklyGoal = so.optInt("weeklyGoal"),
+                updatedAt = so.optLong("goalsUpdatedAt")
+            ) else null
+            Triple(tasks, deleted, settings)
+        }.getOrNull() ?: Triple(emptyList(), emptySet(), null)
     }
 
-    /** Last-write-wins merge of remote state into local. Returns true if
-     *  local state changed (or needs pushing). */
-    fun mergeFromRemote(remoteTasks: List<Task>, remoteDeleted: Set<Long>): Boolean {
+    /** Last-write-wins merge of remote state into local. */
+    fun mergeFromRemote(remoteTasks: List<Task>, remoteDeleted: Set<Long>): MergeResult {
         val local = list()
         val localDeleted = deletedIds()
+        var added = 0
+        var completed = 0
+        var removed = 0
         var changed = false
         val byId = local.associateBy { it.id }.toMutableMap()
 
         // Remote deletions win locally (unless re-added later with a newer id).
         for (id in remoteDeleted) {
-            if (byId.remove(id) != null) changed = true
+            if (byId.remove(id) != null) {
+                removed++
+                changed = true
+            }
         }
         // Remote tasks: newest updatedAt wins.
         for (rt in remoteTasks) {
@@ -212,8 +228,10 @@ object TaskStore {
             val lt = byId[rt.id]
             if (lt == null) {
                 byId[rt.id] = rt
+                added++
                 changed = true
             } else if (rt.updatedAt > lt.updatedAt) {
+                if (rt.completed && !lt.completed) completed++
                 byId[rt.id] = rt
                 changed = true
             } else if (lt.updatedAt > rt.updatedAt) {
@@ -228,6 +246,16 @@ object TaskStore {
             saveDeletedIds(union)
             changed = true
         }
-        return changed
+        return MergeResult(changed, added, completed, removed)
     }
 }
+
+/** Goal settings carried in the sync file for cross-device goal sync. */
+data class SyncSettings(val dailyGoal: Int, val weeklyGoal: Int, val updatedAt: Long)
+
+data class MergeResult(
+    val changed: Boolean,
+    val added: Int,
+    val completed: Int,
+    val removed: Int
+)

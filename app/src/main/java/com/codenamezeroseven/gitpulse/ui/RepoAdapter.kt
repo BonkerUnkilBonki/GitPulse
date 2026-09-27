@@ -11,10 +11,13 @@ import com.codenamezeroseven.gitpulse.databinding.ItemRepoBinding
 class RepoAdapter : RecyclerView.Adapter<RepoAdapter.VH>() {
 
     private val items = mutableListOf<Repo>()
+    private var lastAnimated = -1
 
     fun submit(list: List<Repo>) {
+        if (items == list) return
         items.clear()
         items.addAll(list)
+        lastAnimated = -1
         notifyDataSetChanged()
     }
 
@@ -38,6 +41,11 @@ class RepoAdapter : RecyclerView.Adapter<RepoAdapter.VH>() {
             (view.context as? AppCompatActivity)?.let { act ->
                 RepoDetailSheet.show(act.supportFragmentManager, r)
             }
+        }
+
+        if (position > lastAnimated) {
+            lastAnimated = position
+            Anim.listIn(holder.itemView, position)
         }
     }
 }

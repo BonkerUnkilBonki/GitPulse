@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="ThemeOverlay.GitPulse.Palette.Teal" parent="">
+        <item name="colorPrimary">#006A6A</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorPrimaryContainer">#9CF1F0</item>
+        <item name="colorOnPrimaryContainer">#002020</item>
+        <item name="colorSecondary">#4A6363</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        <item name="colorSecondaryContainer">#CCE8E7</item>
+        <item name="colorOnSecondaryContainer">#051F1F</item>
+        <item name="android:colorBackground">#F4FBFA</item>
+        <item name="colorOnBackground">#161D1D</item>
+        <item name="colorSurface">#F4FBFA</item>
+        <item name="colorOnSurface">#161D1D</item>
+        <item name="colorSurfaceVariant">#DAE4E4</item>
+        <item name="colorOnSurfaceVariant">#3F4949</item>
+        <item name="colorOutline">#6F7979</item>
+        <item name="colorOutlineVariant">#BEC8C8</item>
+    </style>
+
+    <style name="ThemeOverlay.GitPulse.Palette.Ocean" parent="">
+        <item name="colorPrimary">#005EB2</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorPrimaryContainer">#D3E4FF</item>
+        <item name="colorOnPrimaryContainer">#001C38</item>
+        <item name="colorSecondary">#555F71</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        <item name="colorSecondaryContainer">#DAE2F9</item>
+        <item name="colorOnSecondaryContainer">#121C2B</item>
+        <item name="android:colorBackground">#F8F9FE</item>
+        <item name="colorOnBackground">#191C20</item>
+        <item name="colorSurface">#F8F9FE</item>
+        <item name="colorOnSurface">#191C20</item>
+        <item name="colorSurfaceVariant">#DFE2EA</item>
+        <item name="colorOnSurfaceVariant">#43474E</item>
+        <item name="colorOutline">#73777F</item>
+        <item name="colorOutlineVariant">#C3C7CF</item>
+    </style>
+
+    <style name="ThemeOverlay.GitPulse.Palette.Violet" parent="">
+        <item name="colorPrimary">#6750A4</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorPrimaryContainer">#EADDFF</item>
+        <item name="colorOnPrimaryContainer">#21005D</item>
+        <item name="colorSecondary">#625B71</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        <item name="colorSecondaryContainer">#E8DEF8</item>
+        <item name="colorOnSecondaryContainer">#1D192B</item>
+        <item name="android:colorBackground">#FFFBFE</item>
+        <item name="colorOnBackground">#1C1B1F</item>
+        <item name="colorSurface">#FFFBFE</item>
+        <item name="colorOnSurface">#1C1B1F</item>
+        <item name="colorSurfaceVariant">#E7E0EC</item>
+        <item name="colorOnSurfaceVariant">#49454F</item>
+        <item name="colorOutline">#79747E</item>
+        <item name="colorOutlineVariant">#CAC4D0</item>
+    </style>
+
+    <style name="ThemeOverlay.GitPulse.Palette.Sunset" parent="">
+        <item name="colorPrimary">#9C4A00</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorPrimaryContainer">#FFDCC2</item>
+        <item name="colorOnPrimaryContainer">#311300</item>
+        <item name="colorSecondary">#76594A</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        <item name="colorSecondaryContainer">#F3DFD2</item>
+        <item name="colorOnSecondaryContainer">#221A15</item>
+        <item name="android:colorBackground">#FFF8F6</item>
+        <item name="colorOnBackground">#211A16</item>
+        <item name="colorSurface">#FFF8F6</item>
+        <item name="colorOnSurface">#211A16</item>
+        <item name="colorSurfaceVariant">#F4DED4</item>
+        <item name="colorOnSurfaceVariant">#52443C</item>
+        <item name="colorOutline">#857467</item>
+        <item name="colorOutlineVariant">#D7C3B7</item>
+    </style>
+
+    <style name="ThemeOverlay.GitPulse.Palette.Forest" parent="">
+        <item name="colorPrimary">#386A20</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorPrimaryContainer">#B9F194</item>
+        <item name="colorOnPrimaryContainer">#032100</item>
+        <item name="colorSecondary">#55624C</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        <item name="colorSecondaryContainer">#D9E7CB</item>
+        <item name="colorOnSecondaryContainer">#131F0C</item>
+        <item name="android:colorBackground">#F9FAF0</item>
+        <item name="colorOnBackground">#1A1C16</item>
+        <item name="colorSurface">#F9FAF0</item>
+        <item name="colorOnSurface">#1A1C16</item>
+        <item name="colorSurfaceVariant">#DFE5D7</item>
+        <item name="colorOnSurfaceVariant">#43483E</item>
+        <item name="colorOutline">#747B6E</item>
+        <item name="colorOutlineVariant">#C4C9BA</item>
+    </style>
+
+    <style name="ThemeOverlay.GitPulse.Palette.Rose" parent="">
+        <item name="colorPrimary">#984858</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorPrimaryContainer">#FFDADD</item>
+        <item name="colorOnPrimaryContainer">#3F0715</item>
+        <item name="colorSecondary">#765659</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        <item name="colorSecondaryContainer">#FFD9DE</item>
+        <item name="colorOnSecondaryContainer">#2B1518</item>
+        <item name="android:colorBackground">#FFF8F8</item>
+        <item name="colorOnBackground">#221919</item>
+        <item name="colorSurface">#FFF8F8</item>
+        <item name="colorOnSurface">#221919</item>
+        <item name="colorSurfaceVariant">#F4DCDF</item>
+        <item name="colorOnSurfaceVariant">#524347</item>
+        <item name="colorOutline">#847376</item>
+        <item name="colorOutlineVariant">#D5C2C4</item>
+    </style>
+</resources>

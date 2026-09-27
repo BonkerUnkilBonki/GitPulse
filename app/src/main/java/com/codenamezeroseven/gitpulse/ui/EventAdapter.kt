@@ -55,10 +55,13 @@ object EventVisual {
 class EventAdapter : RecyclerView.Adapter<EventAdapter.VH>() {
 
     private val items = mutableListOf<GhEvent>()
+    private var lastAnimated = -1
 
     fun submit(list: List<GhEvent>) {
+        if (items == list) return
         items.clear()
         items.addAll(list)
+        lastAnimated = -1
         notifyDataSetChanged()
     }
 
@@ -103,6 +106,11 @@ class EventAdapter : RecyclerView.Adapter<EventAdapter.VH>() {
             (view.context as? AppCompatActivity)?.let { act ->
                 EventDetailSheet.show(act.supportFragmentManager, e)
             }
+        }
+
+        if (position > lastAnimated) {
+            lastAnimated = position
+            Anim.listIn(holder.itemView, position)
         }
     }
 }

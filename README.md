@@ -34,6 +34,12 @@ heatmap, recent activity, repositories and goal tracking.
   Every refresh pulls and merges (newest change wins per task; deletions
   propagate via tombstones), then pushes the merged state if anything
   differed. Works with any device signed into the same GitHub account.
+- **Offline cache** — your profile, activity, repos and commit calendar are
+  saved to disk after every sync, so the app opens instantly with the last
+  synced data instead of a blank screen while it refreshes.
+- **Automatic sync** — every app open and pull-to-refresh syncs in the
+  background (no buttons), and a low-priority notification confirms what
+  synced: tasks added, completed, removed, or up to date.
 - **Profile** — connect with a GitHub personal access token, avatar, bio,
   follower stats, refresh, sign out.
 

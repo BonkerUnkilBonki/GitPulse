@@ -28,5 +28,14 @@
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">false</item>
+
+        <!-- Material 3 Expressive: same tokens as day theme -->
+        <item name="shapeAppearanceSmallComponent">@style/ShapeAppearance.GitPulse.Small</item>
+        <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.GitPulse.Medium</item>
+        <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.GitPulse.Large</item>
+        <item name="textAppearanceHeadlineSmall">@style/TextAppearance.GitPulse.HeadlineSmall</item>
+        <item name="textAppearanceTitleLarge">@style/TextAppearance.GitPulse.TitleLarge</item>
+        <item name="textAppearanceTitleMedium">@style/TextAppearance.GitPulse.TitleMedium</item>
+        <item name="materialButtonStyle">@style/Widget.GitPulse.Button</item>
     </style>
 </resources>

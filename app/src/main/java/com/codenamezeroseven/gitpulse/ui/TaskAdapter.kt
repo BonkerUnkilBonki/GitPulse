@@ -15,10 +15,13 @@ class TaskAdapter(
 ) : RecyclerView.Adapter<TaskAdapter.VH>() {
 
     private val items = mutableListOf<Task>()
+    private var lastAnimated = -1
 
     fun submit(list: List<Task>) {
+        if (items == list) return
         items.clear()
         items.addAll(list)
+        lastAnimated = -1
         notifyDataSetChanged()
     }
 
@@ -60,5 +63,10 @@ class TaskAdapter(
         }
 
         b.delete.setOnClickListener { onDelete(t.id) }
+
+        if (position > lastAnimated) {
+            lastAnimated = position
+            Anim.listIn(holder.itemView, position)
+        }
     }
 }

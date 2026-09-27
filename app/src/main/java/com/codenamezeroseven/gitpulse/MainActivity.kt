@@ -3,6 +3,7 @@ package com.codenamezeroseven.gitpulse
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
@@ -13,6 +14,8 @@ import com.codenamezeroseven.gitpulse.ui.GoalsFragment
 import com.codenamezeroseven.gitpulse.ui.ProfileFragment
 import com.codenamezeroseven.gitpulse.ui.ReposFragment
 import com.codenamezeroseven.gitpulse.ui.TasksFragment
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 
 class MainActivity : AppCompatActivity() {
@@ -29,6 +32,10 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Prefs.init(applicationContext)
+        // Selected color palette (skipped when dynamic color is on).
+        if (Prefs.palette != "dynamic") {
+            theme.applyStyle(Palette.overlayRes(), true)
+        }
         if (Prefs.theme == "black") {
             theme.applyStyle(R.style.ThemeOverlay_GitPulse_PitchBlack, true)
         }
@@ -67,11 +74,48 @@ class MainActivity : AppCompatActivity() {
             if (f !== current) {
                 supportFragmentManager.beginTransaction().hide(current).show(f).commit()
                 current = f
+                // Quick fade-in so tab switches feel smooth, not instant.
+                f.view?.let { v ->
+                    v.alpha = 0f
+                    v.animate().alpha(1f).setDuration(180)
+                        .setInterpolator(android.view.animation.DecelerateInterpolator())
+                        .start()
+                }
             }
             true
         }
 
-        if (Prefs.token.isBlank()) binding.bottomNav.selectedItemId = R.id.nav_profile
+        if (Prefs.token.isBlank()) {
+            binding.bottomNav.selectedItemId = R.id.nav_profile
+        } else {
+            // Auto-refresh and sync in the background every time the app
+            // opens; the UI already shows the cached snapshot meanwhile.
+            lifecycleScope.launch {
+                runCatching { GitHubData.refresh(force = true) }
+                // Keep tasks and goals in sync with the other devices while
+                // the app is open (pull every ~75s; GitHub has no push).
+                while (true) {
+                    delay(75_000)
+                    val owner = GitHubData.user?.login
+                        ?: Prefs.ownerLogin.takeIf { it.isNotBlank() }
+                        ?: continue
+                    runCatching { TaskSync.sync(Prefs.token, owner) }
+                }
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Coming back to the app: pull fresh tasks/goals if it has been a bit.
+        if (Prefs.token.isNotBlank() && System.currentTimeMillis() - TaskSync.lastAttempt > 20_000) {
+            val owner = GitHubData.user?.login ?: Prefs.ownerLogin.takeIf { it.isNotBlank() }
+            if (owner != null) {
+                lifecycleScope.launch {
+                    runCatching { TaskSync.sync(Prefs.token, owner) }
+                }
+            }
+        }
     }
 
     fun openProfile() {

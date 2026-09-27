@@ -28,6 +28,18 @@ object Prefs {
         get() = sp.getString("theme", "system") ?: "system"
         set(value) { sp.edit().putString("theme", value).apply() }
 
+    var ownerLogin: String
+        get() = sp.getString("ownerLogin", "") ?: ""
+        set(value) { sp.edit().putString("ownerLogin", value).apply() }
+
+    var goalsUpdatedAt: Long
+        get() = sp.getLong("goalsUpdatedAt", 0L)
+        set(value) { sp.edit().putLong("goalsUpdatedAt", value).apply() }
+
+    var palette: String
+        get() = sp.getString("palette", "teal") ?: "teal"
+        set(value) { sp.edit().putString("palette", value).apply() }
+
     var notifAsked: Boolean
         get() = sp.getBoolean("notifAsked", false)
         set(value) { sp.edit().putBoolean("notifAsked", value).apply() }
@@ -49,6 +61,6 @@ object Prefs {
     }
 
     fun signOut() {
-        sp.edit().remove("token").remove("dailyCommits").apply()
+        sp.edit().remove("token").remove("dailyCommits").remove("ownerLogin").apply()
     }
 }

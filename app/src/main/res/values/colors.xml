@@ -8,10 +8,10 @@
     <color name="md_on_secondary">#FFFFFF</color>
     <color name="md_secondary_container">#CCE8E7</color>
     <color name="md_on_secondary_container">#051F1F</color>
-    <color name="md_tertiary">#4B607C</color>
+    <color name="md_tertiary">#7A5700</color>
     <color name="md_on_tertiary">#FFFFFF</color>
-    <color name="md_tertiary_container">#D3E4FF</color>
-    <color name="md_on_tertiary_container">#041C35</color>
+    <color name="md_tertiary_container">#FFDF9B</color>
+    <color name="md_on_tertiary_container">#261A00</color>
     <color name="md_error">#BA1A1A</color>
     <color name="md_on_error">#FFFFFF</color>
     <color name="md_error_container">#FFDAD6</color>

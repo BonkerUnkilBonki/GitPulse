@@ -11,7 +11,13 @@ class GitPulseApp : Application() {
         TaskStore.init(this)
         Notifier.appContext = this
         Notifier.createChannel()
-        DynamicColors.applyToActivitiesIfAvailable(this)
+        DataCache.appContext = this
+        DataCache.load()
+        // Material You dynamic color from the wallpaper - opt-in on the
+        // Profile tab (needs Android 12+).
+        if (android.os.Build.VERSION.SDK_INT >= 31 && Prefs.palette == "dynamic") {
+            DynamicColors.applyToActivitiesIfAvailable(this)
+        }
         applyNightMode()
     }
 

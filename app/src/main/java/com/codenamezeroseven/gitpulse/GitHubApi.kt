@@ -162,7 +162,15 @@ object GitHubApi {
                 .toString()
             val (c, t) = request(token, "/user/repos", "POST", body)
             if (c !in 200..299) {
-                throw ApiException("Could not create sync repo ($c): " + runCatching { JSONObject(t).optString("message") }.getOrDefault(""))
+                val msg = runCatching { JSONObject(t).optString("message") }.getOrDefault("")
+                if (c == 403) {
+                    // Fine-grained tokens cannot create repositories. The user
+                    // can create the repo once on the web and we take over.
+                    throw ApiException(
+                        "Your token can't create repositories. Open github.com/new and create a PRIVATE repo named gitpulse-sync (no README needed), then make sure your token has read+write access to it. Pull-to-refresh afterwards."
+                    )
+                }
+                throw ApiException("Could not create sync repo ($c): $msg")
             }
         } else if (code !in 200..299) {
             throw ApiException("Sync repo check failed ($code)")

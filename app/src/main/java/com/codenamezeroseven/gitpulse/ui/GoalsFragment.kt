@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
+import com.codenamezeroseven.gitpulse.ui.Anim
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
@@ -12,6 +13,7 @@ import com.codenamezeroseven.gitpulse.GitHubData
 import com.codenamezeroseven.gitpulse.MainActivity
 import com.codenamezeroseven.gitpulse.Prefs
 import com.codenamezeroseven.gitpulse.StatsEngine
+import com.codenamezeroseven.gitpulse.TaskSync
 import com.codenamezeroseven.gitpulse.databinding.FragmentGoalsBinding
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -20,6 +22,13 @@ class GoalsFragment : Fragment() {
 
     private var _b: FragmentGoalsBinding? = null
     private val b get() = _b!!
+
+    // Re-render when a background sync pulls new goals from another device.
+    private val syncListener: () -> Unit = {
+        android.os.Handler(android.os.Looper.getMainLooper()).post {
+            if (_b != null && isAdded) render()
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -50,6 +59,8 @@ class GoalsFragment : Fragment() {
                 true
             } else false
         }
+        TaskSync.addListener(syncListener)
+
         b.dailyValue.setOnFocusChangeListener { _, hasFocus -> if (!hasFocus) saveGoals() }
         b.weeklyValue.setOnFocusChangeListener { _, hasFocus -> if (!hasFocus) saveGoals() }
 
@@ -58,6 +69,7 @@ class GoalsFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        TaskSync.removeListener(syncListener)
         _b = null
     }
 
@@ -67,10 +79,15 @@ class GoalsFragment : Fragment() {
                 showDisconnected()
             } else if (GitHubData.user != null) {
                 render()
+                animateIn()
             } else {
                 load(false)
             }
         }
+    }
+
+    private fun animateIn() {
+        (b.content.getChildAt(0) as? ViewGroup)?.let { Anim.staggerChildren(it) }
     }
 
     private fun showDisconnected() {
@@ -94,6 +111,7 @@ class GoalsFragment : Fragment() {
             b.swipe.isRefreshing = false
             result.onSuccess { render() }
                 .onFailure { e ->
+                    if (e is kotlinx.coroutines.CancellationException) return@launch
                     Toast.makeText(requireContext(), e.message ?: "Failed to load", Toast.LENGTH_LONG).show()
                     render()
                 }
@@ -103,15 +121,31 @@ class GoalsFragment : Fragment() {
     private fun saveGoals() {
         val d = b.dailyValue.text?.toString()?.toIntOrNull() ?: Prefs.dailyGoal
         val w = b.weeklyValue.text?.toString()?.toIntOrNull() ?: Prefs.weeklyGoal
+        if (d == Prefs.dailyGoal && w == Prefs.weeklyGoal) return
         Prefs.dailyGoal = d
         Prefs.weeklyGoal = w
+        Prefs.goalsUpdatedAt = System.currentTimeMillis()
+        pushGoalsAsync()
         b.dailyValue.setText(Prefs.dailyGoal.toString())
         b.weeklyValue.setText(Prefs.weeklyGoal.toString())
         render()
     }
 
+    /** Push the new goal numbers to the sync repo (other devices pick them up). */
+    private fun pushGoalsAsync() {
+        val token = Prefs.token
+        val owner = GitHubData.user?.login ?: Prefs.ownerLogin.takeIf { it.isNotBlank() } ?: return
+        viewLifecycleOwner.lifecycleScope.launch {
+            runCatching { TaskSync.sync(token, owner) }
+        }
+    }
+
     private fun render() {
         val daily = GitHubData.cachedDailyCommits()
+
+        // Reflect synced goals in the inputs (unless the user is typing).
+        if (!b.dailyValue.hasFocus()) b.dailyValue.setText(Prefs.dailyGoal.toString())
+        if (!b.weeklyValue.hasFocus()) b.weeklyValue.setText(Prefs.weeklyGoal.toString())
 
         val weekTotal = StatsEngine.weeklyTotal(daily)
         b.weekCaption.text = "$weekTotal of ${Prefs.weeklyGoal} commits this week"
@@ -126,10 +160,10 @@ class GoalsFragment : Fragment() {
         }
         b.goalHistorySummary.text = "$met of the last 35 days met your daily goal"
 
-        b.streakValue.text = StatsEngine.streak(daily).toString() + " days"
-        b.bestValue.text = StatsEngine.bestStreak(daily).toString() + " days"
         val cutoff = LocalDate.now().minusDays(89)
-        b.activeValue.text = daily.count { it.value > 0 && !it.key.isBefore(cutoff) }.toString()
+        Anim.countUp(b.streakValue, StatsEngine.streak(daily), suffix = " days")
+        Anim.countUp(b.bestValue, StatsEngine.bestStreak(daily), suffix = " days")
+        Anim.countUp(b.activeValue, daily.count { it.value > 0 && !it.key.isBefore(cutoff) })
         b.totalValue.text = if (GitHubData.totalCommits >= 0) GitHubData.totalCommits.toString() else "…"
     }
 }

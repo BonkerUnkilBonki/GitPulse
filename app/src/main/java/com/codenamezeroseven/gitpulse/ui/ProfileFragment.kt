@@ -1,16 +1,22 @@
 package com.codenamezeroseven.gitpulse.ui
 
 import android.graphics.BitmapFactory
+import android.graphics.drawable.GradientDrawable
+import android.os.Build
 import android.os.Bundle
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.LinearLayout
+import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.codenamezeroseven.gitpulse.GitPulseApp
 import com.codenamezeroseven.gitpulse.GitHubApi
 import com.codenamezeroseven.gitpulse.GitHubData
+import com.codenamezeroseven.gitpulse.Palette
 import com.codenamezeroseven.gitpulse.Prefs
 import com.codenamezeroseven.gitpulse.R
 import com.codenamezeroseven.gitpulse.databinding.FragmentProfileBinding
@@ -33,9 +39,11 @@ class ProfileFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         b.connectBtn.setOnClickListener { connect() }
+        Anim.pressable(b.connectBtn)
         b.refreshBtn.setOnClickListener { refreshNow() }
         b.signoutBtn.setOnClickListener { confirmSignOut() }
         setupThemeChips()
+        setupPaletteRow()
         renderState()
     }
 
@@ -59,6 +67,59 @@ class ProfileFragment : Fragment() {
         b.chipThemeLight.setOnCheckedChangeListener { _, checked -> if (checked) applyTheme("light") }
         b.chipThemeDark.setOnCheckedChangeListener { _, checked -> if (checked) applyTheme("dark") }
         b.chipThemeBlack.setOnCheckedChangeListener { _, checked -> if (checked) applyTheme("black") }
+    }
+
+    /** Color palette picker - swatch circles for each palette. */
+    private fun setupPaletteRow() {
+        val row = b.paletteRow
+        row.removeAllViews()
+        val dp = resources.displayMetrics.density
+        val entries = Palette.all.filter {
+            it.id != "dynamic" || Build.VERSION.SDK_INT >= 31
+        }
+        entries.forEach { entry ->
+            val col = LinearLayout(requireContext()).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER_HORIZONTAL
+                setPadding((6 * dp).toInt(), 0, (6 * dp).toInt(), 0)
+            }
+            val circle = View(requireContext())
+            circle.layoutParams = LinearLayout.LayoutParams((48 * dp).toInt(), (48 * dp).toInt())
+            val selected = entry.id == Prefs.palette
+            circle.background = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                setColor(entry.swatch)
+                if (selected) {
+                    setStroke(
+                        (3 * dp).toInt(),
+                        com.google.android.material.color.MaterialColors.getColor(
+                            circle, com.google.android.material.R.attr.colorOnSurface
+                        )
+                    )
+                }
+            }
+            Anim.pressable(circle)
+            circle.setOnClickListener {
+                if (Prefs.palette != entry.id) {
+                    Prefs.palette = entry.id
+                    activity?.recreate()
+                }
+            }
+            val label = TextView(requireContext()).apply {
+                text = entry.label
+                gravity = Gravity.CENTER
+                textSize = 12f
+                setPadding(0, (4 * dp).toInt(), 0, 0)
+                setTextColor(
+                    com.google.android.material.color.MaterialColors.getColor(
+                        circle, com.google.android.material.R.attr.colorOnSurfaceVariant
+                    )
+                )
+            }
+            col.addView(circle)
+            col.addView(label)
+            row.addView(col)
+        }
     }
 
     private fun applyTheme(theme: String) {
@@ -95,6 +156,7 @@ class ProfileFragment : Fragment() {
                 renderState()
                 launch { runCatching { GitHubData.refresh(true) } }
             }.onFailure { e ->
+                if (e is kotlinx.coroutines.CancellationException) return@launch
                 b.errorText.text = e.message ?: "Connection failed"
                 b.errorText.visibility = View.VISIBLE
             }
@@ -110,6 +172,7 @@ class ProfileFragment : Fragment() {
                 Toast.makeText(requireContext(), "Data refreshed", Toast.LENGTH_SHORT).show()
                 renderProfile()
             }.onFailure { e ->
+                if (e is kotlinx.coroutines.CancellationException) return@launch
                 Toast.makeText(requireContext(), e.message ?: "Failed", Toast.LENGTH_SHORT).show()
             }
         }

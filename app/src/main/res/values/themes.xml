@@ -28,6 +28,59 @@
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">true</item>
+
+        <!-- Material 3 Expressive: bigger shapes everywhere -->
+        <item name="shapeAppearanceSmallComponent">@style/ShapeAppearance.GitPulse.Small</item>
+        <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.GitPulse.Medium</item>
+        <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.GitPulse.Large</item>
+
+        <!-- Material 3 Expressive: bolder, larger type scale -->
+        <item name="textAppearanceHeadlineSmall">@style/TextAppearance.GitPulse.HeadlineSmall</item>
+        <item name="textAppearanceTitleLarge">@style/TextAppearance.GitPulse.TitleLarge</item>
+        <item name="textAppearanceTitleMedium">@style/TextAppearance.GitPulse.TitleMedium</item>
+
+        <!-- Pill-shaped, taller buttons -->
+        <item name="materialButtonStyle">@style/Widget.GitPulse.Button</item>
+    </style>
+
+    <!-- Expressive shape system -->
+    <style name="ShapeAppearance.GitPulse.Small" parent="ShapeAppearance.Material3.SmallComponent">
+        <item name="cornerSize">16dp</item>
+    </style>
+
+    <style name="ShapeAppearance.GitPulse.Medium" parent="ShapeAppearance.Material3.MediumComponent">
+        <item name="cornerSize">28dp</item>
+    </style>
+
+    <style name="ShapeAppearance.GitPulse.Large" parent="ShapeAppearance.Material3.LargeComponent">
+        <item name="cornerSize">32dp</item>
+    </style>
+
+    <style name="ShapeAppearance.GitPulse.Pill" parent="ShapeAppearance.Material3.SmallComponent">
+        <item name="cornerSize">50%</item>
+    </style>
+
+    <!-- Expressive typography -->
+    <style name="TextAppearance.GitPulse.HeadlineSmall" parent="TextAppearance.Material3.HeadlineSmall">
+        <item name="android:textSize">30sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="TextAppearance.GitPulse.TitleLarge" parent="TextAppearance.Material3.TitleLarge">
+        <item name="android:textSize">22sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="TextAppearance.GitPulse.TitleMedium" parent="TextAppearance.Material3.TitleMedium">
+        <item name="android:textSize">17sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+
+    <style name="Widget.GitPulse.Button" parent="Widget.Material3.Button">
+        <item name="shapeAppearance">@style/ShapeAppearance.GitPulse.Pill</item>
+        <item name="android:minHeight">52dp</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textStyle">bold</item>
     </style>
 
     <style name="Shape.Circle" parent="">

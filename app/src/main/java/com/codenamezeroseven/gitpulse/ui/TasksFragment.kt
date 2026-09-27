@@ -42,6 +42,14 @@ class TasksFragment : Fragment() {
         )
     }
 
+    // Re-render the list the moment a background sync lands, so newly
+    // pulled tasks appear without leaving the tab.
+    private val syncListener: () -> Unit = {
+        android.os.Handler(android.os.Looper.getMainLooper()).post {
+            if (_b != null && isAdded) render()
+        }
+    }
+
     private val notifPermLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
 
@@ -70,6 +78,10 @@ class TasksFragment : Fragment() {
             pushAsync()
         }
 
+        TaskSync.addListener(syncListener)
+
+        Anim.pressable(b.addBtn)
+
         if (Build.VERSION.SDK_INT >= 33 && !Prefs.notifAsked) {
             Prefs.notifAsked = true
             notifPermLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
@@ -80,16 +92,20 @@ class TasksFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        TaskSync.removeListener(syncListener)
         _b = null
     }
 
     override fun onHiddenChanged(hidden: Boolean) {
-        if (!hidden && _b != null) render()
+        if (!hidden && _b != null) {
+            render()
+            Anim.staggerIn(b.syncInfo, b.summary, b.recycler, b.empty)
+        }
     }
 
     private fun pushAsync() {
         val token = Prefs.token
-        val owner = GitHubData.user?.login ?: return
+        val owner = GitHubData.user?.login ?: Prefs.ownerLogin.takeIf { it.isNotBlank() } ?: return
         viewLifecycleOwner.lifecycleScope.launch {
             runCatching { TaskSync.sync(token, owner) }
         }
@@ -100,7 +116,7 @@ class TasksFragment : Fragment() {
         if (syncing) return
         if (Prefs.token.isBlank()) return
         if (System.currentTimeMillis() - TaskSync.lastAttempt < 2 * 60_000L) return
-        val owner = GitHubData.user?.login ?: return
+        val owner = GitHubData.user?.login ?: Prefs.ownerLogin.takeIf { it.isNotBlank() } ?: return
         syncing = true
         viewLifecycleOwner.lifecycleScope.launch {
             runCatching { TaskSync.sync(Prefs.token, owner) }
@@ -130,13 +146,22 @@ class TasksFragment : Fragment() {
         val done = tasks.count { it.completed }
         b.summary.text = "$open open · $done completed"
 
-        b.syncInfo.text = if (Prefs.token.isBlank()) {
-            "Local only — connect GitHub to sync tasks across devices"
-        } else {
-            val time = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm"))
-            "Synced to your private repo ${GitHubData.user?.login ?: ""}/gitpulse-sync · last check $time"
+        b.syncInfo.text = when {
+            Prefs.token.isBlank() ->
+                "Local only — connect GitHub to sync tasks across devices"
+            TaskSync.lastError != null ->
+                "Sync problem: ${TaskSync.lastError} — will retry on next refresh"
+            TaskSync.lastSync > 0 -> {
+                val time = java.text.SimpleDateFormat("HH:mm", java.util.Locale.US)
+                    .format(java.util.Date(TaskSync.lastSync))
+                "Synced with gitpulse-sync at $time"
+            }
+            else -> "Waiting for first sync…"
         }
 
-        b.empty.visibility = if (tasks.isEmpty()) View.VISIBLE else View.GONE
+        b.empty.visibility = if (tasks.isEmpty()) {
+            Anim.breathe(b.empty)
+            View.VISIBLE
+        } else View.GONE
     }
 }

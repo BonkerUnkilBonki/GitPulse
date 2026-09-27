@@ -22,11 +22,29 @@ object GitHubData {
     suspend fun refresh(force: Boolean = false) {
         val token = Prefs.token
         if (token.isBlank()) throw GitHubApi.ApiException("Not connected")
-        if (!force && user != null && System.currentTimeMillis() - lastRefresh < 5 * 60_000L) return
         mutex.withLock {
+            // Throttle inside the lock so a queued duplicate refresh sees the
+            // just-completed one and skips instead of re-fetching.
+            if (!force && user != null &&
+                System.currentTimeMillis() - lastRefresh < 5 * 60_000L
+            ) return@withLock
             withContext(Dispatchers.IO) {
                 val u = GitHubApi.fetchUser(token)
+                Prefs.ownerLogin = u.login
+
+                // Cross-device sync comes FIRST - nothing else can block it.
+                runCatching { TaskSync.sync(token, u.login, notify = true) }
+
                 val ev = GitHubApi.fetchEvents(token, u.login)
+
+                // Auto-complete tasks whose keywords match recent GitHub activity
+                val completedTasks = TaskStore.processEvents(ev)
+                if (completedTasks.isNotEmpty()) {
+                    Notifier.notifyCompleted(completedTasks)
+                    // Push the auto-completions to the other devices.
+                    runCatching { TaskSync.sync(token, u.login) }
+                }
+
                 val reps = GitHubApi.fetchRepos(token, u.login)
 
                 // Preferred source: the real contribution calendar (matches the
@@ -41,19 +59,15 @@ object GitHubData {
                     commitsTotal = total
                 } else {
                     daily = StatsEngine.dailyCommits(ev)
-                    commitsTotal = GitHubApi.searchTotal(token, "search/commits", "author:${u.login}")
+                    commitsTotal = runCatching {
+                        GitHubApi.searchTotal(token, "search/commits", "author:${u.login}")
+                    }.getOrDefault(-1)
                 }
 
-                val prs = GitHubApi.searchTotal(token, "search/issues", "author:${u.login} type:pr")
-
-                // Auto-complete tasks whose keywords match recent GitHub activity
-                val completedTasks = TaskStore.processEvents(ev)
-                if (completedTasks.isNotEmpty()) {
-                    Notifier.notifyCompleted(completedTasks)
-                }
-
-                // Sync tasks across devices via the private sync repo
-                runCatching { TaskSync.sync(token, u.login) }
+                // Rate-limit-prone search: never abort the whole refresh for it.
+                val prs = runCatching {
+                    GitHubApi.searchTotal(token, "search/issues", "author:${u.login} type:pr")
+                }.getOrDefault(-1)
 
                 user = u
                 events = ev
@@ -63,12 +77,17 @@ object GitHubData {
                 totalPRs = prs
                 lastRefresh = System.currentTimeMillis()
                 Prefs.saveDailyCommits(daily)
+                // Persist the snapshot so the app opens with data, not blank.
+                DataCache.save()
             }
         }
     }
 
     fun cachedDailyCommits(): Map<LocalDate, Int> =
         if (dailyCommits.isNotEmpty()) dailyCommits else Prefs.dailyCommits()
+
+    /** Restores the last snapshot from disk. Call once at app start. */
+    fun loadCache(): Boolean = DataCache.load()
 
     fun clearLocal() {
         user = null
@@ -78,5 +97,6 @@ object GitHubData {
         totalCommits = -1
         totalPRs = -1
         lastRefresh = 0
+        DataCache.clear()
     }
 }

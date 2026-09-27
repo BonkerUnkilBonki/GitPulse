@@ -27,6 +27,8 @@ class BarChartView @JvmOverloads constructor(
     var labels: List<String> = emptyList()
     var values: List<Int> = emptyList()
     var goal: Int = 0
+    private var grow: ValueAnimator? = null
+    private var growProgress = 1f
 
     private val density = context.resources.displayMetrics.density
     private val barPaint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -50,7 +52,17 @@ class BarChartView @JvmOverloads constructor(
         this.labels = labels
         this.values = values
         this.goal = goal
-        invalidate()
+        grow?.cancel()
+        growProgress = 0f
+        grow = ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = 750
+            interpolator = DecelerateInterpolator()
+            addUpdateListener {
+                growProgress = it.animatedValue as Float
+                invalidate()
+            }
+            start()
+        }
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -73,7 +85,7 @@ class BarChartView @JvmOverloads constructor(
 
         for (i in values.indices) {
             val v = values[i]
-            val h = chartH * (v.toFloat() / maxV)
+            val h = chartH * (v.toFloat() / maxV) * growProgress
             val left = i * slot + (slot - barW) / 2f
             val top = topPad + (chartH - h)
             val right = left + barW
@@ -91,7 +103,9 @@ class BarChartView @JvmOverloads constructor(
 
         if (goal > 0 && goal <= maxV) {
             val y = topPad + chartH * (1f - goal.toFloat() / maxV)
+            goalPaint.alpha = (growProgress * 255).toInt()
             canvas.drawLine(0f, y, width.toFloat(), y, goalPaint)
+            goalPaint.alpha = 255
         }
     }
 }
@@ -109,8 +123,11 @@ class HeatmapView @JvmOverloads constructor(
 
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val rect = RectF()
+    private var sweepAnim: ValueAnimator? = null
+    private var sweep = 1f
     private var cellSize = 12f
     private var gap = 2f
+    private var xOffset = 0f
     private var start: LocalDate = LocalDate.now()
 
     fun setData(daily: Map<LocalDate, Int>, weeks: Int, threshold: Int = 0) {
@@ -119,13 +136,27 @@ class HeatmapView @JvmOverloads constructor(
         this.threshold = threshold
         this.start = LocalDate.now().minusDays((weeks * 7L) - 1)
         requestLayout()
-        invalidate()
+        sweepAnim?.cancel()
+        sweep = 0f
+        sweepAnim = ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = 800
+            interpolator = DecelerateInterpolator()
+            addUpdateListener {
+                sweep = it.animatedValue as Float
+                invalidate()
+            }
+            start()
+        }
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
-        cellSize = w.toFloat() / weeks
+        // A cell must fit BOTH the weeks columns (width) and the 7 rows
+        // (height). Deriving it from width alone made few-weeks grids have
+        // huge cells whose lower rows overflowed the view and got clipped.
+        cellSize = min(w.toFloat() / weeks, h.toFloat() / 7f)
         gap = min(5f, cellSize * 0.15f)
+        xOffset = (w - cellSize * weeks) / 2f
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -133,7 +164,10 @@ class HeatmapView @JvmOverloads constructor(
         val emptyColor = MaterialColors.getColor(context, MaterialR.attr.colorSurfaceVariant, "s")
         val maxV = (daily.values.maxOrNull() ?: 0).coerceAtLeast(1)
         val today = LocalDate.now()
+        val sweepCol = sweep * weeks
         for (w in 0 until weeks) {
+            val fade = (sweepCol - w).coerceIn(0f, 1f)
+            if (fade <= 0f) continue
             for (r in 0 until 7) {
                 val date = start.plusDays(w * 7L + r)
                 if (date.isAfter(today)) continue
@@ -159,10 +193,13 @@ class HeatmapView @JvmOverloads constructor(
                         }
                     }
                 }
-                val cx = w * cellSize + gap / 2f
+                val cx = xOffset + w * cellSize + gap / 2f
                 val cy = r * cellSize + gap / 2f
                 rect.set(cx, cy, cx + cellSize - gap, cy + cellSize - gap)
+                val baseAlpha = paint.alpha
+                paint.alpha = (baseAlpha * fade).toInt()
                 canvas.drawRoundRect(rect, cellSize * 0.38f, cellSize * 0.38f, paint)
+                paint.alpha = baseAlpha
             }
         }
         paint.alpha = 255
@@ -170,7 +207,7 @@ class HeatmapView @JvmOverloads constructor(
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if (event.action == MotionEvent.ACTION_DOWN && cellSize > 0) {
-            val w = (event.x / cellSize).toInt()
+            val w = ((event.x - xOffset) / cellSize).toInt()
             val r = (event.y / cellSize).toInt()
             if (w in 0 until weeks && r in 0 until 7) {
                 val date = start.plusDays(w * 7L + r)
@@ -227,7 +264,7 @@ class RingView @JvmOverloads constructor(
     }
 
     override fun onDraw(canvas: Canvas) {
-        val stroke = 13f * density
+        val stroke = 17f * density
         trackPaint.strokeWidth = stroke
         sweepPaint.strokeWidth = stroke
         trackPaint.color = MaterialColors.getColor(context, MaterialR.attr.colorSurfaceVariant, "s")
