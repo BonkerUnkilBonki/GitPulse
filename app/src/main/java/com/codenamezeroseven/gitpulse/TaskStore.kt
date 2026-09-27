@@ -131,12 +131,29 @@ object TaskStore {
      * happened after the task was created. Returns newly completed tasks.
      */
     fun processEvents(events: List<GhEvent>): List<Task> {
+        // Master switch: keyword auto-completion can be turned off entirely.
+        if (!Prefs.autoCompleteTasks) return emptyList()
         // The sync repo's automatic commits must never auto-complete tasks
         // (its repo name and "GitPulse: sync tasks" message would match
         // keywords like "sync" or "gitpulse").
-        val matchable = if (Prefs.excludeSyncTasks) {
-            events.filter { !it.repoName.endsWith("/gitpulse-sync") }
-        } else events
+        // The sync repo and its tasks.json file are COMPLETELY ignored for
+        // auto-completion - unconditionally. No toggle, no exceptions: repo
+        // names in any casing, the tasks.json file itself, and GitPulse
+        // sync commit messages can never match a task title or keyword.
+        val matchable = events.filter { ev ->
+            val repo = ev.repoName.lowercase()
+            val repoOk = !repo.endsWith("/gitpulse-sync") &&
+                repo != "gitpulse-sync" &&
+                !repo.contains("/gitpulse-sync")
+            val msgOk = ev.commitList.none {
+                it.message.startsWith("GitPulse:", ignoreCase = true)
+            }
+            val hay = (ev.repoName + " " + ev.detail + " " + (ev.title ?: "") + " " +
+                (ev.ref ?: "") + " " + (ev.tag ?: "") + " " +
+                ev.commitList.joinToString(" ") { it.message }).lowercase()
+            val fileOk = !hay.contains("tasks.json")
+            repoOk && msgOk && fileOk
+        }
         if (matchable.isEmpty()) return emptyList()
         val l = list()
         val newly = mutableListOf<Task>()
@@ -152,8 +169,13 @@ object TaskStore {
             for (e in matchable) {
                 if (e.type !in matchableTypes) continue
                 if (e.createdAtEpochDay < t.createdAtEpochDay) continue
+                // Keywords match only the CONTENT of the activity - commit
+                // messages, PR/issue titles, branch/tag names, event text -
+                // NEVER the repo's name. Otherwise a task keyworded after a
+                // project (e.g. "gitpulse") gets completed by every push to
+                // the repo that happens to share that name.
                 val hay = (
-                    e.repoName + " " + e.detail + " " + (e.title ?: "") + " " +
+                    e.detail + " " + (e.title ?: "") + " " +
                         (e.ref ?: "") + " " + (e.tag ?: "") + " " +
                         e.commitList.joinToString(" ") { it.message }
                     ).lowercase()
@@ -172,6 +194,26 @@ object TaskStore {
         }
         if (changed) save(l)
         return newly
+    }
+
+    /** Un-completes every task that was auto-completed from GitHub. */
+    fun resetAutoCompletions(): Int {
+        val l = list()
+        var n = 0
+        for (i in l.indices) {
+            val t = l[i]
+            if (t.completed && t.completionSource.startsWith("GitHub:")) {
+                l[i] = t.copy(
+                    completed = false,
+                    completedAtEpochDay = -1,
+                    completionSource = "",
+                    updatedAt = System.currentTimeMillis()
+                )
+                n++
+            }
+        }
+        if (n > 0) save(l)
+        return n
     }
 
     // ---------- Cross-device sync (merge + file serialization) ----------
@@ -231,16 +273,26 @@ object TaskStore {
         // Remote tasks: newest updatedAt wins.
         for (rt in remoteTasks) {
             if (rt.id in localDeleted) continue
-            val lt = byId[rt.id]
+            // AUTO-HEAL: completions that came from the sync repo (written by
+            // an older app version on another device) are false - discard
+            // the completion and push the healed state back out.
+            val healed = rt.completed && rt.completionSource.lowercase().contains("gitpulse-sync")
+            val r = if (healed) rt.copy(
+                completed = false,
+                completedAtEpochDay = -1,
+                completionSource = "",
+                updatedAt = System.currentTimeMillis()
+            ) else rt
+            val lt = byId[r.id]
             if (lt == null) {
-                byId[rt.id] = rt
+                byId[r.id] = r
                 added++
                 changed = true
-            } else if (rt.updatedAt > lt.updatedAt) {
-                if (rt.completed && !lt.completed) completed++
-                byId[rt.id] = rt
+            } else if (r.updatedAt > lt.updatedAt) {
+                if (r.completed && !lt.completed) completed++
+                byId[r.id] = r
                 changed = true
-            } else if (lt.updatedAt > rt.updatedAt) {
+            } else if (lt.updatedAt > r.updatedAt) {
                 changed = true // local is newer; push will propagate it
             }
         }

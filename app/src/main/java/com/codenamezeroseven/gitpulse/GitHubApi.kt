@@ -204,6 +204,33 @@ object GitHubApi {
         }
     }
 
+    /** Line-level stats of a push: additions, deletions, files. */
+    data class PushChanges(
+        val additions: Int,
+        val deletions: Int,
+        val files: List<Triple<String, Int, Int>>
+    )
+
+    /** Full diff stats for a push event (what the push changed). */
+    suspend fun fetchPushChanges(
+        token: String, repoName: String, before: String?, head: String?
+    ): PushChanges? {
+        if (before.isNullOrBlank() || head.isNullOrBlank()) return null
+        val (code, text) = request(token, "/repos/$repoName/compare/$before...$head")
+        if (code != 200) return null
+        return runCatching {
+            val o = JSONObject(text)
+            val stats = o.optJSONObject("stats") ?: JSONObject()
+            val files = mutableListOf<Triple<String, Int, Int>>()
+            val fa = o.optJSONArray("files")
+            if (fa != null) for (i in 0 until fa.length()) {
+                val f = fa.getJSONObject(i)
+                files += Triple(f.optString("filename"), f.optInt("additions"), f.optInt("deletions"))
+            }
+            PushChanges(stats.optInt("additions"), stats.optInt("deletions"), files)
+        }.getOrNull()
+    }
+
     /** Fetch a single repo by full name, or null. */
     suspend fun fetchRepo(token: String, fullName: String): Repo? {
         val (code, text) = request(token, "/repos/$fullName")

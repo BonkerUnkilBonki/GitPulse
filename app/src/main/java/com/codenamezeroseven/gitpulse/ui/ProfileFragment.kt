@@ -146,9 +146,9 @@ class ProfileFragment : Fragment() {
             }
         }
 
-        b.switchExcludeSyncTasks.isChecked = Prefs.excludeSyncTasks
-        b.switchExcludeSyncTasks.setOnCheckedChangeListener { _, checked ->
-            Prefs.excludeSyncTasks = checked
+        b.switchAutoComplete.isChecked = Prefs.autoCompleteTasks
+        b.switchAutoComplete.setOnCheckedChangeListener { _, checked ->
+            Prefs.autoCompleteTasks = checked
         }
 
         b.switchActivityNotifs.isChecked = Prefs.activityNotifs

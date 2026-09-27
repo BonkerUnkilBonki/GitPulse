@@ -49,6 +49,7 @@ class ActivityWorker(ctx: Context, params: WorkerParameters) :
                 Prefs.lastSeenEventId = maxId
             }
         }
+        runCatching { WidgetHelper.updateAll(applicationContext) }
         return Result.success()
     }
 }

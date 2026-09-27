@@ -40,6 +40,10 @@ object Prefs {
         get() = sp.getBoolean("excludeSyncTasks", true)
         set(value) { sp.edit().putBoolean("excludeSyncTasks", value).apply() }
 
+    var autoCompleteTasks: Boolean
+        get() = sp.getBoolean("autoCompleteTasks", true)
+        set(value) { sp.edit().putBoolean("autoCompleteTasks", value).apply() }
+
     var activityNotifs: Boolean
         get() = sp.getBoolean("activityNotifs", true)
         set(value) { sp.edit().putBoolean("activityNotifs", value).apply() }

@@ -310,11 +310,11 @@
                     android:text="Exclude gitpulse-sync commits from stats" />
 
                 <com.google.android.material.materialswitch.MaterialSwitch
-                    android:id="@+id/switchExcludeSyncTasks"
+                    android:id="@+id/switchAutoComplete"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="Exclude gitpulse-sync from task auto-complete" />
+                    android:text="Auto-complete tasks from GitHub activity" />
 
                 <com.google.android.material.materialswitch.MaterialSwitch
                     android:id="@+id/switchActivityNotifs"

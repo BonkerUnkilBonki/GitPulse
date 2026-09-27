@@ -83,6 +83,7 @@ object TaskSync {
             lastError = e.message ?: "sync failed"
             if (notify) Notifier.notifySyncProblem(lastError ?: "sync failed")
         }.also {
+            runCatching { WidgetHelper.updateAll(DataCache.appContext) }
             listeners.forEach { it() }
         }
     }

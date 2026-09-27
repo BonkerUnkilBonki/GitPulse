@@ -82,6 +82,24 @@ class TasksFragment : Fragment() {
 
         Anim.pressable(b.addBtn)
 
+        b.resetBtn.setOnClickListener {
+            com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Reset auto-completions?")
+                .setMessage("Every task that was auto-completed from GitHub will be marked open again. This also removes the marks on your other devices.")
+                .setPositiveButton("Reset") { _, _ ->
+                    val n = TaskStore.resetAutoCompletions()
+                    render()
+                    pushAsync()
+                    Toast.makeText(
+                        requireContext(),
+                        if (n == 0) "Nothing to reset" else "$n task${if (n == 1) "" else "s"} re-opened",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        }
+
         if (Build.VERSION.SDK_INT >= 33 && !Prefs.notifAsked) {
             Prefs.notifAsked = true
             notifPermLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)

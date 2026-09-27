@@ -112,6 +112,32 @@ class EventDetailSheet : BottomSheetDialogFragment() {
 
         // In-app navigation: load the repo and open its detail sheet with
         // recent commits and README instead of leaving the app.
+        // Push events: show what the push actually contained (diff stats + files)
+        if (e.type == "PushEvent") {
+            val changesRow = textRow("Loading what changed…") as android.widget.TextView
+            b.sectionContainer.addView(changesRow)
+            viewLifecycleOwner.lifecycleScope.launch {
+                val ch = runCatching {
+                    GitHubApi.fetchPushChanges(Prefs.token, e.repoName, e.beforeSha, e.headSha)
+                }.getOrNull()
+                if (_b == null) return@launch
+                changesRow.text = when {
+                    ch == null -> "Diff details are not available for this push."
+                    else -> {
+                        val top = ch.files.take(5)
+                        val fileList = top.joinToString("\n") { f ->
+                            val plus = if (f.second > 0) "  +${f.second}" else ""
+                            val minus = if (f.third > 0) "  -${f.third}" else ""
+                            "${f.first}$plus$minus"
+                        }
+                        val more = if (ch.files.size > 5) "\n+ ${ch.files.size - 5} more files" else ""
+                        "+${ch.additions} additions, -${ch.deletions} deletions" +
+                            if (ch.files.isNotEmpty()) " in ${ch.files.size} file${if (ch.files.size == 1) "" else "s"}:\n$fileList$more" else ""
+                    }
+                }
+            }
+        }
+
         b.openBtn.text = "View repository"
         b.openBtn.setOnClickListener { view ->
             val act = view.context as? AppCompatActivity ?: return@setOnClickListener

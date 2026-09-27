@@ -99,6 +99,7 @@ object GitHubData {
                 Prefs.saveDailyCommits(daily)
                 // Persist the snapshot so the app opens with data, not blank.
                 DataCache.save()
+                runCatching { WidgetHelper.updateAll(DataCache.appContext) }
             }
         }
     }
